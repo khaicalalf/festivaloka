@@ -19,7 +19,6 @@ async function bootstrap() {
     .setTitle('FestivaLoka API')
     .setDescription('Dokumentasi API untuk Hackathon')
     .setVersion('1.0')
-    .addTag('festival') // Tag opsional buat grouping
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

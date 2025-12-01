@@ -3,11 +3,11 @@ import { AiService } from './ai.service';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('AI Recommendation')
-@Controller('ai')
+@Controller('kolosal-ai')
 export class AiController {
   constructor(private readonly aiService: AiService) { }
 
-  @Post('recommend')
+  @Post('rekomendasi')
   @ApiOperation({ summary: 'Minta rekomendasi tenant berdasarkan preferensi' })
   @ApiBody({
     schema: {

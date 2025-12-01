@@ -11,16 +11,15 @@ export class AiService {
     ) { }
 
     async recommend(preferences: string[]) {
-        // 1. Ambil data Tenant dari Database kita
+        // 1. Ambil data Tenant dari db
         const allTenants = await this.tenantsService.findAll();
 
-        // Kita perkecil datanya biar hemat token AI (Cuma butuh ID, Nama, Deskripsi)
         const tenantData = allTenants.map(t => ({
             id: t.id,
             name: t.name,
             category: t.category,
             desc: t.description,
-            menus: t.menus.map(m => m.name).join(', ') // Gabung nama menu jadi string
+            menus: t.menus.map(m => m.name).join(', ')
         }));
 
         // 2. Siapkan Prompt untuk AI
@@ -44,23 +43,6 @@ export class AiService {
 
         // 3. Tembak ke API Kolosal AI (Atau Mocking Dulu)
         try {
-            // --- OPSI 1: Kalau API Key Kolosal Belum Ada/Error, pakai Mocking ini dulu ---
-            // Kita filter manual sederhana biar Frontend bisa kerja
-            // const mockResult = tenantData
-            //     .filter(t =>
-            //         t.desc.toLowerCase().includes(preferences[0].toLowerCase()) ||
-            //         t.menus.toLowerCase().includes(preferences[0].toLowerCase())
-            //     )
-            //     .map(t => ({
-            //         id: t.id,
-            //         reason: `Cocok karena kamu cari ${preferences[0]} dan di sini ada ${t.name}`
-            //     }));
-
-            // return mockResult;
-            // ---------------------------------------------------------------------------
-
-            // --- OPSI 2: Kalau API Key Sudah Ada, Uncomment kode di bawah ini ---
-
             const response = await firstValueFrom(
                 this.httpService.post('https://api.kolosal.ai/v1/chat/completions', {
                     model: 'Claude Sonnet 4.5',
@@ -71,22 +53,16 @@ export class AiService {
             );
             const rawContent = response.data.choices[0].message.content;
 
-            console.log("Raw dari AI:", rawContent); // Debugging: Biar liat aslinya gimana
-
-            // --- MULAI PEMBERSIHAN ---
             const cleanContent = rawContent
-                .replace(/```json/g, '') // Hapus tulisan ```json
-                .replace(/```/g, '')     // Hapus tanda ``` penutup
-                .trim();                 // Hapus spasi/enter di awal & akhir
-            // --- SELESAI PEMBERSIHAN ---
+                .replace(/```json/g, '')
+                .replace(/```/g, '')
+                .trim();
 
             return JSON.parse(cleanContent);
 
         } catch (error) {
             console.error("AI Error:", error);
 
-            // FALLBACK (Jaga-jaga kalau AI error/down, kasih rekomendasi random/default)
-            // Supaya aplikasi gak crash di user
             return [
                 {
                     id: tenantData[0]?.id || 1,
