@@ -1,0 +1,59 @@
+// server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Tabel Customer (Menyimpan Poin, Email, HP)
+model Customer {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  phone     String
+  points    Int      @default(0) // Poin loyalitas
+  orders    Order[]  // Customer bisa punya banyak order
+  createdAt DateTime @default(now())
+}
+
+// 2. Tabel Tenant (Daftar Toko di Festival)
+model Tenant {
+  id          Int      @id @default(autoincrement())
+  name        String   // Nama Toko (misal: Seblak Viral)
+  category    String   // Makanan / Minuman
+  description String?  // Deskripsi buat dibaca AI
+  isViral     Boolean  @default(false)
+  status      String   @default("OPEN") // OPEN / CLOSED / BUSY
+  menus       Menu[]
+  orders      Order[]
+}
+
+// 3. Tabel Menu (Daftar Makanan per Toko)
+model Menu {
+  id          Int     @id @default(autoincrement())
+  name        String
+  price       Int
+  description String?
+  tenantId    Int
+  tenant      Tenant  @relation(fields: [tenantId], references: [id])
+}
+
+// 4. Tabel Order (Transaksi Pembelian)
+model Order {
+  id          String   @id @default(uuid()) // ID Unik (cth: a1b2-c3d4)
+  totalAmount Int
+  status      String   @default("PENDING") // PENDING, PAID, CANCELLED
+  
+  // Relasi ke Tenant
+  tenantId    Int
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Relasi ke Customer (Optional, diisi pas checkout)
+  customerId  Int?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
