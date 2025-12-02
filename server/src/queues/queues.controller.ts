@@ -7,12 +7,12 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 export class QueuesController {
   constructor(private readonly queuesService: QueuesService) { }
 
-  @Post('join')
-  @ApiOperation({ summary: 'User ambil nomor antrian baru' })
-  @ApiBody({ schema: { example: { tenantId: 1 } } }) // Contoh body buat Swagger
-  join(@Body('tenantId') tenantId: number) {
-    return this.queuesService.joinQueue(tenantId);
-  }
+  // @Post('join')
+  // @ApiOperation({ summary: 'User ambil nomor antrian baru' })
+  // @ApiBody({ schema: { example: { tenantId: 1 } } }) // Contoh body buat Swagger
+  // join(@Body('tenantId') tenantId: number) {
+  //   return this.queuesService.joinQueue(tenantId);
+  // }
 
   @Get('info/:tenantId')
   @ApiOperation({ summary: 'Cek info keramaian (Jumlah antrian & Estimasi waktu)' })

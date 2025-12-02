@@ -8,7 +8,7 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Cek Status Order & Lihat Nomor Antrian untuk User' })
+  @ApiOperation({ summary: 'Cek Status Order & Lihat Nomor Antrian untuk User (Order-xxx)' })
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
   }
@@ -41,11 +41,5 @@ export class OrdersController {
   @ApiOperation({ summary: 'Webhook Midtrans (Jangan dipanggil manual)' })
   async notification(@Body() body: any) {
     return this.ordersService.handleNotification(body);
-  }
-
-  @Post('confirm/:orderId')
-  @ApiOperation({ summary: 'Konfirmasi pembayaran sukses (Update Poin) || Jangan dipake' })
-  confirm(@Param('orderId') orderId: string) {
-    return this.ordersService.confirmPayment(orderId);
   }
 }
