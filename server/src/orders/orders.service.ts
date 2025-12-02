@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
+import { QueuesService } from 'src/queues/queues.service';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const midtransClient = require('midtrans-client');
 
@@ -10,7 +11,9 @@ const prisma = new PrismaClient();
 export class OrdersService {
     private core;
 
-    constructor(private configService: ConfigService) {
+    constructor(private configService: ConfigService,
+        private queuesService: QueuesService
+    ) {
         const sKey = this.configService.get<string>('SERVER_KEY_MIDTRANS');
         const cKey = this.configService.get<string>('CLIENT_KEY_MIDTRANS');
         this.core = new midtransClient.Snap({
