@@ -42,29 +42,34 @@ model Menu {
 
 // 4. Tabel Order (Transaksi Pembelian)
 model Order {
-  id          String   @id @default(uuid()) // ID Unik (cth: a1b2-c3d4)
+  id          String   @id @default(uuid())
   totalAmount Int
-  status      String   @default("PENDING") // PENDING, PAID, CANCELLED
-
-  // Kolom Baru: Menyimpan nomor antrian hasil generate otomatis
+  status      String   @default("PENDING")
   queueNumber String?
-  
-  // Relasi ke Tenant
+  items       Json?
+
+  // RELASI BALIK (Tanpa 'fields' & 'references')
+  queue       Queue?   
+
+  // ... (sisa field tenantId, customerId dll tetap sama) ...
   tenantId    Int
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
-
-  // Relasi ke Customer (Optional, diisi pas checkout)
   customerId  Int?
   customer    Customer? @relation(fields: [customerId], references: [id])
-  
   createdAt   DateTime @default(now())
 }
 
 // 5. Tabel Queue (Antrian untuk setiap toko)
 model Queue {
   id        Int      @id @default(autoincrement())
-  number    String   // Contoh: A-1, A-2
-  status    String   @default("WAITING") // WAITING, CALLED, DONE, CANCELLED
+  number    String
+  status    String   @default("WAITING")
+
+  // FOREIGN KEY DIDEFINISIKAN DI SINI
+  orderId   String?  @unique // @unique wajib untuk relasi 1-to-1
+  order     Order?   @relation(fields: [orderId], references: [id]) 
+
+  // ... (sisa field tenantId dll tetap sama) ...
   tenantId  Int
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   createdAt DateTime @default(now())

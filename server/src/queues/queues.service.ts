@@ -6,48 +6,48 @@ const prisma = new PrismaClient();
 @Injectable()
 export class QueuesService {
 
-    // 1. USER: Ambil Nomor Antrian (Scan QR)
-    async joinQueue(tenantId: number) {
+    // 1. USER: Ambil Nomor Antrian (Scan QR atau Auto dari Order)
+    // PERBAIKAN: Tambahkan parameter opsional 'orderId'
+    async joinQueue(tenantId: number, orderId?: string) {
         // Cek tokonya ada gak?
         const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
         if (!tenant) throw new NotFoundException('Toko tidak ditemukan');
 
-        // Hitung antrian HARI INI saja (Biar besok reset jadi A-1 lagi)
+        // Hitung antrian HARI INI saja
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const countToday = await prisma.queue.count({
             where: {
                 tenantId: tenantId,
-                createdAt: { gte: today } // Ambil yang dibuat setelah jam 00:00 hari ini
+                createdAt: { gte: today }
             }
         });
 
-        const queueNumber = `A-${countToday + 1}`; // A-1, A-2, dst.
+        const queueNumber = `A-${countToday + 1}`; // A-1, A-2...
 
         // Simpan ke Database
         const newQueue = await prisma.queue.create({
             data: {
                 number: queueNumber,
                 tenantId: tenantId,
-                status: 'WAITING'
+                status: 'WAITING',
+                orderId: orderId // 👈 Sekarang aman, karena ada di parameter
             }
         });
 
-        // Update status keramaian toko (Biar peta jadi merah/hijau)
+        // Update status keramaian toko
         await this.updateTenantCrowdStatus(tenantId);
 
         return newQueue;
     }
 
-    // 2. PUBLIC: Cek Info Keramaian (Buat Peta & Waiting Room)
+    // 2. PUBLIC: Cek Info Keramaian
     async getQueueInfo(tenantId: number) {
-        // Hitung berapa orang yang statusnya masih WAITING
         const waitingCount = await prisma.queue.count({
             where: { tenantId, status: 'WAITING' }
         });
 
-        // Cek siapa yang lagi dipanggil (CALLED)
         const currentServing = await prisma.queue.findFirst({
             where: { tenantId, status: 'CALLED' },
             orderBy: { updatedAt: 'desc' }
@@ -56,9 +56,9 @@ export class QueuesService {
         return {
             tenantId,
             waitingCount,
-            currentNumber: currentServing?.number || '-', // Kalau gak ada yg dipanggil, strip
-            estimatedWaitTime: waitingCount * 3, // Asumsi 1 orang = 3 menit
-            isCrowded: waitingCount > 5 // Kalau lebih dari 5 antrian, anggap RAMAI (Merah)
+            currentNumber: currentServing?.number || '-',
+            estimatedWaitTime: waitingCount * 3,
+            isCrowded: waitingCount > 5
         };
     }
 
@@ -69,24 +69,34 @@ export class QueuesService {
             data: { status }
         });
 
-        // Update lagi status toko (Siapa tau antrian habis jadi SEPI lagi)
         await this.updateTenantCrowdStatus(queue.tenantId);
-
         return queue;
     }
 
-    // 4. TENANT: Dashboard (Lihat siapa aja yang ngantri)
+    // 4. TENANT: Dashboard (Lihat antrian + detail pesanan)
     async getTenantDashboard(tenantId: number) {
         return await prisma.queue.findMany({
             where: {
                 tenantId,
-                status: { in: ['WAITING', 'CALLED'] } // Tampilkan yg nunggu & dipanggil aja
+                status: { in: ['WAITING', 'CALLED'] }
             },
-            orderBy: { createdAt: 'asc' } // Yang datang duluan di atas
+            include: {
+                order: {
+                    select: {
+                        id: true,
+                        items: true,
+                        totalAmount: true,
+                        customer: {
+                            select: { email: true, phone: true }
+                        }
+                    }
+                }
+            },
+            orderBy: { createdAt: 'asc' }
         });
     }
 
-    // --- HELPER: Update Warna Toko Otomatis ---
+    // --- HELPER ---
     private async updateTenantCrowdStatus(tenantId: number) {
         const waitingCount = await prisma.queue.count({
             where: { tenantId, status: 'WAITING' }
@@ -96,13 +106,12 @@ export class QueuesService {
         let isViral = false;
 
         if (waitingCount > 5) {
-            newStatus = 'RAMAI'; // Merah
+            newStatus = 'RAMAI';
             isViral = true;
         } else if (waitingCount > 2) {
-            newStatus = 'SEDANG'; // Kuning
+            newStatus = 'SEDANG';
         }
 
-        // Update tabel Tenant
         await prisma.tenant.update({
             where: { id: tenantId },
             data: { status: newStatus, isViral: isViral }
