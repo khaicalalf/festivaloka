@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const midtransClient = require('midtrans-client');
@@ -7,11 +8,17 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class OrdersService {
-    private core = new midtransClient.Snap({
-        isProduction: false, // Sandbox Mode
-        serverKey: 'SERVER_KEY_KAMU_DISINI', // ⚠️ GANTI DENGAN SERVER KEY MIDTRANS KAMU
-        clientKey: 'CLIENT_KEY_KAMU_DISINI'  // ⚠️ GANTI DENGAN CLIENT KEY MIDTRANS KAMU
-    });
+    private core;
+
+    constructor(private configService: ConfigService) {
+        const sKey = this.configService.get<string>('SERVER_KEY_MIDTRANS');
+        const cKey = this.configService.get<string>('CLIENT_KEY_MIDTRANS');
+        this.core = new midtransClient.Snap({
+            isProduction: false, // Sandbox Mode
+            serverKey: sKey,
+            clientKey: cKey
+        });
+    }
 
     // 1. Fungsi Checkout (Mulai Transaksi)
     async checkout(data: any) {
