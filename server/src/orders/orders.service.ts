@@ -1,8 +1,7 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { QueuesService } from '../queues/queues.service';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const midtransClient = require('midtrans-client');
 
 const prisma = new PrismaClient();
@@ -214,5 +213,22 @@ export class OrdersService {
         }
 
         return { status: 'OK' };
+    }
+
+    // 4. Ambil Detail Order (Buat Halaman Sukses/Tracking)
+    async findOne(id: string) {
+        const order = await prisma.order.findUnique({
+            where: { id: id },
+            include: {
+                tenant: true, // Biar tau nama tokonya apa
+                customer: true // Biar tau email/hp pemesan
+            }
+        });
+
+        if (!order) {
+            throw new NotFoundException(`Order dengan ID ${id} tidak ditemukan`);
+        }
+
+        return order;
     }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
@@ -6,6 +6,12 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Cek Status Order & Lihat Nomor Antrian untuk User' })
+  findOne(@Param('id') id: string) {
+    return this.ordersService.findOne(id);
+  }
 
   @Post('checkout')
   @ApiOperation({ summary: 'Buat Order baru & Dapatkan Midtrans Token' })
