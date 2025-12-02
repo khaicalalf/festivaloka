@@ -48,7 +48,7 @@ export class AiService {
                     model: 'Claude Sonnet 4.5',
                     messages: [{ role: 'user', content: prompt }]
                 }, {
-                    headers: { 'Authorization': 'Bearer kol_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWYwYmJiM2MtN2I5MC00Nzc3LWIyODgtNGY5MjJjMGFmOTQ0Iiwia2V5X2lkIjoiZDYwOTE4ZmItNDZjNy00YjJlLWI5YmQtOGY2NTA4YTM5YTVhIiwia2V5X25hbWUiOiJmZXN0aXZhbG9rYS1hcHBzIiwiZW1haWwiOiJwcm9mYWRsaWJhZUBnbWFpbC5jb20iLCJyYXRlX2xpbWl0X3JwcyI6bnVsbCwibWF4X2NyZWRpdF91c2UiOm51bGwsImNyZWF0ZWRfYXQiOjE3NjQ2MDkxNDAsImV4cGlyZXNfYXQiOjE3OTYxNDUxNDAsImlhdCI6MTc2NDYwOTE0MH0.Rem8TTEIF0HuRVxormSVtHJA0hxxwAtIqR8TRWjuORM' }
+                    headers: { 'Authorization': 'Bearer ' + process.env.API_KEY_KOLOSAL_AI }
                 })
             );
             const rawContent = response.data.choices[0].message.content;
