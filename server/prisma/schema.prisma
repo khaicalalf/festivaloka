@@ -45,6 +45,9 @@ model Order {
   id          String   @id @default(uuid()) // ID Unik (cth: a1b2-c3d4)
   totalAmount Int
   status      String   @default("PENDING") // PENDING, PAID, CANCELLED
+
+  // Kolom Baru: Menyimpan nomor antrian hasil generate otomatis
+  queueNumber String?
   
   // Relasi ke Tenant
   tenantId    Int

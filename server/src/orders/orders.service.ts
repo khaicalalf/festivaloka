@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { QueuesService } from 'src/queues/queues.service';
@@ -12,7 +12,9 @@ export class OrdersService {
     private core;
 
     constructor(private configService: ConfigService,
-        private queuesService: QueuesService
+
+        @Inject(forwardRef(() => QueuesService))
+        private queuesService: QueuesService,
     ) {
         const sKey = this.configService.get<string>('SERVER_KEY_MIDTRANS');
         const cKey = this.configService.get<string>('CLIENT_KEY_MIDTRANS');
@@ -133,7 +135,7 @@ export class OrdersService {
         const transactionStatus = notification.transaction_status;
         const fraudStatus = notification.fraud_status;
 
-        console.log(`WEBHOOK RECEIVED: ${orderId} - ${transactionStatus}`);
+        console.log(`WEBHOOK: Menerima notifikasi untuk Order ${orderId}`);
 
         // Cari Order di Database
         const order = await prisma.order.findUnique({
@@ -144,17 +146,15 @@ export class OrdersService {
         if (!order) return { message: 'Order not found' };
 
         // LOGIKA STATUS MIDTRANS
-        let newStatus = order.status; // Default status lama
+        let newStatus = order.status;
 
         if (transactionStatus == 'capture') {
-            // Khusus Kartu Kredit: Cek fraud status
             if (fraudStatus == 'challenge') {
-                // Transaksi dicurigai, jangan update lunas dulu
+                // Do nothing
             } else if (fraudStatus == 'accept') {
                 newStatus = 'PAID';
             }
         } else if (transactionStatus == 'settlement') {
-            // Ini status SUKSES untuk GoPay, VA, Qris, dll.
             newStatus = 'PAID';
         } else if (
             transactionStatus == 'cancel' ||
@@ -164,16 +164,28 @@ export class OrdersService {
             newStatus = 'CANCELLED';
         }
 
-        // Jika status berubah jadi PAID, kita update DB & Tambah Poin
+        // --- UPDATE DATABASE ---
         if (newStatus === 'PAID' && order.status !== 'PAID') {
-            // Hitung Poin
+            console.log(`Order ${orderId} LUNAS. Memproses Antrian & Poin...`);
+
+            // 1. GENERATE ANTRIAN OTOMATIS (Fitur Baru) 🚀
+            // Panggil service sebelah untuk minta nomor antrian
+            const queue = await this.queuesService.joinQueue(order.tenantId);
+            console.log(`Antrian Terbuat: ${queue.number}`);
+
+            // 2. Hitung Poin
             const pointsEarned = Math.floor(order.totalAmount / 10000);
 
+            // 3. Update Database (Simpan Status PAID & Nomor Antrian)
             if (order.customer) {
+                // Skenario: User terdaftar (punya email/hp), dapat Poin
                 await prisma.$transaction([
                     prisma.order.update({
                         where: { id: orderId },
-                        data: { status: 'PAID' }
+                        data: {
+                            status: 'PAID',
+                            queueNumber: queue.number // 👈 Simpan nomor antrian di sini
+                        }
                     }),
                     prisma.customer.update({
                         where: { id: order.customer.id },
@@ -181,17 +193,24 @@ export class OrdersService {
                     })
                 ]);
             } else {
+                // Skenario: User hantu (data customer hilang/corrupt), tetap update order
                 await prisma.order.update({
                     where: { id: orderId },
-                    data: { status: 'PAID' }
+                    data: {
+                        status: 'PAID',
+                        queueNumber: queue.number // 👈 Simpan nomor antrian di sini
+                    }
                 });
             }
-            console.log(`Order ${orderId} LUNAS. Poin ditambahkan.`);
+
+            console.log(`Sukses! Order ${orderId} selesai dengan No Antrian ${queue.number}`);
+
         } else if (newStatus === 'CANCELLED') {
             await prisma.order.update({
                 where: { id: orderId },
                 data: { status: 'CANCELLED' }
             });
+            console.log(`Order ${orderId} DIBATALKAN.`);
         }
 
         return { status: 'OK' };

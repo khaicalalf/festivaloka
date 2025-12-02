@@ -6,6 +6,7 @@ import { OrdersModule } from '../orders/orders.module';
 @Module({
   controllers: [QueuesController],
   providers: [QueuesService],
-  imports: [OrdersModule]
+  // imports: [OrdersModule],
+  exports: [QueuesService],
 })
 export class QueuesModule { }
