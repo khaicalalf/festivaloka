@@ -31,8 +31,14 @@ export class OrdersController {
     return this.ordersService.checkout(data);
   }
 
+  @Post('notification')
+  @ApiOperation({ summary: 'Webhook Midtrans (Jangan dipanggil manual)' })
+  async notification(@Body() body: any) {
+    return this.ordersService.handleNotification(body);
+  }
+
   @Post('confirm/:orderId')
-  @ApiOperation({ summary: 'Konfirmasi pembayaran sukses (Update Poin)' })
+  @ApiOperation({ summary: 'Konfirmasi pembayaran sukses (Update Poin) || Jangan dipake' })
   confirm(@Param('orderId') orderId: string) {
     return this.ordersService.confirmPayment(orderId);
   }

@@ -124,4 +124,73 @@ export class OrdersService {
             pointsAdded: pointsEarned
         };
     }
+
+    async handleNotification(notification: any) {
+        const orderId = notification.order_id;
+        const transactionStatus = notification.transaction_status;
+        const fraudStatus = notification.fraud_status;
+
+        console.log(`WEBHOOK RECEIVED: ${orderId} - ${transactionStatus}`);
+
+        // Cari Order di Database
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { customer: true }
+        });
+
+        if (!order) return { message: 'Order not found' };
+
+        // LOGIKA STATUS MIDTRANS
+        let newStatus = order.status; // Default status lama
+
+        if (transactionStatus == 'capture') {
+            // Khusus Kartu Kredit: Cek fraud status
+            if (fraudStatus == 'challenge') {
+                // Transaksi dicurigai, jangan update lunas dulu
+            } else if (fraudStatus == 'accept') {
+                newStatus = 'PAID';
+            }
+        } else if (transactionStatus == 'settlement') {
+            // Ini status SUKSES untuk GoPay, VA, Qris, dll.
+            newStatus = 'PAID';
+        } else if (
+            transactionStatus == 'cancel' ||
+            transactionStatus == 'deny' ||
+            transactionStatus == 'expire'
+        ) {
+            newStatus = 'CANCELLED';
+        }
+
+        // Jika status berubah jadi PAID, kita update DB & Tambah Poin
+        if (newStatus === 'PAID' && order.status !== 'PAID') {
+            // Hitung Poin
+            const pointsEarned = Math.floor(order.totalAmount / 10000);
+
+            if (order.customer) {
+                await prisma.$transaction([
+                    prisma.order.update({
+                        where: { id: orderId },
+                        data: { status: 'PAID' }
+                    }),
+                    prisma.customer.update({
+                        where: { id: order.customer.id },
+                        data: { points: { increment: pointsEarned } }
+                    })
+                ]);
+            } else {
+                await prisma.order.update({
+                    where: { id: orderId },
+                    data: { status: 'PAID' }
+                });
+            }
+            console.log(`Order ${orderId} LUNAS. Poin ditambahkan.`);
+        } else if (newStatus === 'CANCELLED') {
+            await prisma.order.update({
+                where: { id: orderId },
+                data: { status: 'CANCELLED' }
+            });
+        }
+
+        return { status: 'OK' };
+    }
 }
