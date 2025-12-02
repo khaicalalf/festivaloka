@@ -7,6 +7,7 @@ import { CheckoutModal } from "../components/order/CheckoutModal";
 import type { CartItem, MenuItem, Tenant } from "../types";
 import { fetchTenants, fetchTenantMenu } from "../api/tenants";
 import { createTransaction, mapCartToPayloadItems } from "../api/transactions";
+import { PreferenceSummary } from "../components/preferences/PreferenceSummary";
 //import { useNavigate } from "react-router-dom";
 
 export function HomePage() {
@@ -20,21 +21,33 @@ export function HomePage() {
   const [contact, setContact] = useState({ email: "", phone: "" });
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [editingPref, setEditingPref] = useState(() => {
+    // jika preferences dari localStorage masih default → auto edit mode
+    return false;
+  });
+
+  // quick check untuk tau apakah user sudah pernah isi preferensi
+  const isDefault =
+    preferences.notes === "" &&
+    preferences.spicyLevel === "medium" &&
+    preferences.halalOnly === true;
 
   //const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
       setLoadingTenants(true);
-      try {
-        const data = await fetchTenants();
-        setTenants(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoadingTenants(false);
-      }
+
+      const tenantsPromise = fetchTenants();
+      // misal kamu mau prefetch default tenant dulu
+
+      const [tenants] = await Promise.all([tenantsPromise]);
+
+      setTenants(tenants);
+
+      setLoadingTenants(false);
     };
+
     load();
   }, []);
 
@@ -44,6 +57,7 @@ export function HomePage() {
     setLoadingMenu(true);
     try {
       const data = await fetchTenantMenu(tenant.id);
+      setSelectedTenant(data);
       setMenu(data.menus);
     } catch (e) {
       console.error(e);
@@ -97,24 +111,27 @@ export function HomePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
       <h1 className="text-2xl font-bold mb-2">Food Court Digital</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        Masukkan preferensi makanmu, pilih tenant, pesan, dan bayar via
-        Midtrans. Nanti nomor antrian & estimasi selesai muncul di halaman
-        transaksi.
-      </p>
-
-      <PreferenceForm
-        value={preferences}
-        onChange={setPreferences}
-        onSubmit={() => {
-          // di sini sebenarnya cukup disimpan via hook, boleh tambahin toast
-        }}
-      />
+      <section className="mb-4">
+        {editingPref || isDefault ? (
+          <PreferenceForm
+            value={preferences}
+            onChange={setPreferences}
+            onSubmit={() => {
+              setEditingPref(false);
+            }}
+          />
+        ) : (
+          <PreferenceSummary
+            pref={preferences}
+            onEdit={() => setEditingPref(true)}
+          />
+        )}
+      </section>
 
       <section className="space-y-2">
         <h2 className="font-semibold text-lg">Pilih Tenant</h2>
         {loadingTenants ? (
-          <p className="text-sm text-gray-500">Memuat tenant...</p>
+          <div className="animate-pulse bg-gray-200 h-24 rounded-md"></div>
         ) : (
           <TenantList tenants={tenants} onSelectTenant={handleSelectTenant} />
         )}
@@ -123,7 +140,7 @@ export function HomePage() {
       {selectedTenant && (
         <section>
           {loadingMenu ? (
-            <p className="text-sm text-gray-500 mt-2">Memuat menu...</p>
+            <div className="animate-pulse bg-gray-200 h-24 rounded-md"></div>
           ) : (
             <OrderForm
               tenantName={selectedTenant.name}
