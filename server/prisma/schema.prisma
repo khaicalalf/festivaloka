@@ -27,6 +27,7 @@ model Tenant {
   status      String   @default("OPEN") // OPEN / CLOSED / BUSY
   menus       Menu[]
   orders      Order[]
+  queues      Queue[]
 }
 
 // 3. Tabel Menu (Daftar Makanan per Toko)
@@ -54,4 +55,15 @@ model Order {
   customer    Customer? @relation(fields: [customerId], references: [id])
   
   createdAt   DateTime @default(now())
+}
+
+// 5. Tabel Queue (Antrian untuk setiap toko)
+model Queue {
+  id        Int      @id @default(autoincrement())
+  number    String   // Contoh: A-1, A-2
+  status    String   @default("WAITING") // WAITING, CALLED, DONE, CANCELLED
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

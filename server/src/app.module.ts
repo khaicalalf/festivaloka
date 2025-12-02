@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { TenantsModule } from './tenants/tenants.module';
 import { AiModule } from './ai/ai.module';
 import { OrdersModule } from './orders/orders.module';
+import { QueuesModule } from './queues/queues.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { OrdersModule } from './orders/orders.module';
     }),
     TenantsModule,
     AiModule,
-    OrdersModule
+    OrdersModule,
+    QueuesModule
   ],
   controllers: [AppController],
   providers: [AppService],
