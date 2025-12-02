@@ -2,7 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
-@ApiTags('AI Recommendation')
+@ApiTags('Kolosal AI')
 @Controller('kolosal-ai')
 export class AiController {
   constructor(private readonly aiService: AiService) { }
