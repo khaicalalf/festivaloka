@@ -78,54 +78,82 @@ export class AiService {
     }
 
     async getSmartRecommendations(preferences: string = "") {
-        console.log("AI Processing for preferences:", preferences || "No Preference");
+        console.log("AI Processing with Historical Data...");
 
-        // 1. AMBIL DATA MENTAH DARI DB (Tenants + Jumlah Antrian Saat Ini)
+        // 1. AMBIL DATA LEBIH LENGKAP (Tenant + Menu + Queue History)
         const tenants = await this.prisma.tenant.findMany({
             include: {
-                menus: { select: { name: true, price: true } }, // Ambil menu buat bahan analisis AI
+                menus: { select: { name: true, price: true } },
                 queues: {
-                    where: { status: 'WAITING' }, // Cuma butuh yang nunggu
-                    select: { id: true }
+                    // Ambil 50 data antrian terakhir (Campur WAITING dan DONE)
+                    take: 50,
+                    orderBy: { updatedAt: 'desc' },
+                    select: { status: true, createdAt: true, updatedAt: true }
                 }
             }
         });
 
-        // 2. RAKIT DATA AGAR HEMAT TOKEN (Jangan kirim semua field DB)
-        const tenantsLite = tenants.map(t => ({
-            id: t.id,
-            name: t.name,
-            category: t.category,
-            currentQueue: t.queues.length, // Jumlah antrian real-time
-            menus: t.menus.map(m => `${m.name} (${m.price})`).join(', ').substring(0, 200) // Batasi panjang teks
-        }));
+        // 2. OLAH DATA (Feature Engineering) SEBELUM DIKIRIM KE AI 🛠️
+        const tenantsContext = tenants.map(t => {
+            // A. Hitung Antrian Saat Ini
+            const waitingCount = t.queues.filter(q => q.status === 'WAITING').length;
 
-        // 3. RAKIT PROMPT RAKSASA 🧠
-        // Kita minta AI jadi konsultan yang menilai semua toko sekaligus
-        const prompt = `
-        Data Restoran & Antrian Real-time:
-        ${JSON.stringify(tenantsLite)}
+            // B. Hitung Rata-rata Kecepatan Masak (Hanya dari yang DONE)
+            const completedOrders = t.queues.filter(q => q.status === 'DONE');
 
-        Permintaan User: "${preferences ? preferences : 'Tampilkan semua yang menarik'}"
+            let avgPrepTimeMinutes = 10; // Default kalau data kosong (toko baru)
 
-        Tugasmu sebagai AI Festivaloka:
-        1. FILTER: Jika ada preferensi user, pilih HANYA yang relevan. Jika kosong, nilai semua.
-        2. PREDIKSI: Berdasarkan 'currentQueue' dan jenis makanannya, tebak berapa menit lagi order selesai.
-           (Rumus kasar AI: Minuman ~2mnt/org, Makanan ~5-8mnt/org).
-        3. URUTKAN: Dari yang paling direkomendasikan.
-
-        Jawab HANYA JSON Array murni (tanpa markdown) dengan format:
-        [
-            {
-                "id": 1, 
-                "relevanceScore": 90, 
-                "prediction": "15 Menit (Ramai Lancar)", 
-                "reason": "Cocok dengan request pedasmu, antrian ada 3 orang."
+            if (completedOrders.length > 0) {
+                const totalDuration = completedOrders.reduce((acc, q) => {
+                    // Selisih waktu Selesai - Dibuat (Milliseconds -> Minutes)
+                    const duration = (q.updatedAt.getTime() - q.createdAt.getTime()) / 60000;
+                    return acc + duration;
+                }, 0);
+                avgPrepTimeMinutes = Math.round(totalDuration / completedOrders.length);
             }
-        ]
+
+            // C. Siapkan Data Ringkas untuk AI
+            return {
+                id: t.id,
+                name: t.name,
+                category: t.category,
+                menus: t.menus.map(m => m.name).join(', ').substring(0, 150), // Hemat token
+                stats: {
+                    currentQueue: waitingCount,       // Faktor Keramaian Realtime
+                    avgSpeedPerOrder: `${avgPrepTimeMinutes} menit` // Faktor Kecepatan Historis
+                }
+            };
+        });
+
+        // 3. RAKIT PROMPT YANG LEBIH PINTAR 🧠
+        const prompt = `
+        Data Tenant (Termasuk Statistik Kecepatan & Antrian):
+        ${JSON.stringify(tenantsContext)}
+
+        Request User: "${preferences ? preferences : ''}"
+
+        Tugasmu (Strict Filtering & Calculation):
+        1. FILTER: 
+           - Jika user minta spesifik (misal: "Pedas"), HANYA ambil yang menunya relevan. 
+           - Jika kosong, ambil semua.
+        
+        2. HITUNG PREDIKSI (Wajib Pakai Data Stats):
+           - Gunakan rumus: (stats.currentQueue * stats.avgSpeedPerOrder).
+           - Contoh: Jika antri 5 orang & speed 10 menit = Estimasi 50 menit.
+           - Jika 'currentQueue' 0, estimasinya adalah 'avgSpeedPerOrder' (langsung dimasak).
+
+        3. OUTPUT JSON Array:
+           [
+             {
+               "id": 1,
+               "relevanceScore": 90,
+               "prediction": "Ekspektasi tunggu sekitar 30 Menit",
+               "reason": "Antrian ada 3 orang, dan toko ini rata-rata butuh 10 menit per pesanan."
+             }
+           ]
         `;
 
-        // 4. TEMBAK KOLOSAL AI (Claude Sonnet 4.5) 🚀
+        // 4. REQUEST KE KOLOSAL AI (Claude Sonnet 4.5) 🚀
         try {
             const url = 'https://api.kolosal.ai/v1/chat/completions';
             const apiKey = this.configService.get('API_KEY_KOLOSAL_AI');
@@ -142,43 +170,56 @@ export class AiService {
 
             const response = await lastValueFrom(response$);
 
-            // 5. PARSING JSON DARI AI
+            // 5. PARSING JSON
             let textResult = response.data.choices?.[0]?.message?.content || "[]";
             textResult = textResult.replace(/```json|```/g, '').trim();
-            const aiRecommendations = JSON.parse(textResult);
 
-            // 6. GABUNGKAN HASIL AI DENGAN DATA ASLI (Hydration)
-            // Biar Frontend dapat data lengkap (Gambar, Alamat, dll)
+            let aiRecommendations = [];
+            try {
+                aiRecommendations = JSON.parse(textResult);
+            } catch (e) {
+                console.error("Failed to parse AI JSON");
+                aiRecommendations = [];
+            }
+
+            // 6. GABUNGKAN DATA (Hydration)
             const finalResult = aiRecommendations.map((rec: any) => {
                 const originalTenant = tenants.find(t => t.id === rec.id);
                 if (!originalTenant) return null;
 
+                // Ambil data antrian WAITING untuk ditampilkan di UI
+                const waitingCount = originalTenant.queues.filter(q => q.status === 'WAITING').length;
+
                 return {
-                    ...originalTenant, // Data lengkap tenant (DB)
-                    ai_insight: {      // Data tambahan dari AI
+                    ...originalTenant,
+                    // Kita timpa data queues biar frontend gak berat load 50 history
+                    // Cuma kirim jumlahnya aja
+                    queues: undefined,
+                    queueCount: waitingCount,
+
+                    ai_insight: {
                         score: rec.relevanceScore,
                         wait_prediction: rec.prediction,
                         reason: rec.reason
                     }
                 };
-            }).filter(item => item !== null); // Hapus yang null
+            }).filter(item => item !== null);
 
-            // Sort by Score Tertinggi
+            // Sort by Score AI
             return finalResult.sort((a, b) => b.ai_insight.score - a.ai_insight.score);
 
         } catch (error) {
-            console.error("AI Batch Error:", error.response?.data || error.message);
-
-            // FALLBACK JIKA AI ERROR / LIMIT
-            // Kembalikan list tenant biasa disortir berdasarkan antrian terpendek
-            return tenants.map(t => ({
+            console.error("AI Error:", error.message);
+            // Fallback: Return raw tenants tanpa AI
+            return tenants.slice(0, 5).map(t => ({
                 ...t,
+                queues: undefined,
                 ai_insight: {
                     score: 50,
-                    wait_prediction: `${t.queues.length * 5} Menit (Estimasi Kasar)`,
-                    reason: "AI Sedang sibuk, menampilkan data antrian manual."
+                    wait_prediction: "Kalkulasi Manual",
+                    reason: "AI Sedang Overload"
                 }
-            })).sort((a, b) => a.queues.length - b.queues.length);
+            }));
         }
     }
 }
