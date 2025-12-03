@@ -19,9 +19,6 @@ export class OrdersService {
         const sKey = this.configService.get<string>('SERVER_KEY_MIDTRANS');
         const cKey = this.configService.get<string>('CLIENT_KEY_MIDTRANS');
 
-        // Debugging Key (Bisa dihapus nanti)
-        // console.log("Midtrans Key:", sKey, cKey);
-
         this.core = new midtransClient.Snap({
             isProduction: false,
             serverKey: sKey,
