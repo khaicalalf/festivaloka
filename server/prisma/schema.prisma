@@ -23,11 +23,17 @@ model Tenant {
   name        String   // Nama Toko (misal: Seblak Viral)
   category    String   // Makanan / Minuman
   description String?  // Deskripsi buat dibaca AI
+  imageUrl    String?
+  address     String?
   isViral     Boolean  @default(false)
   status      String   @default("OPEN") // OPEN / CLOSED / BUSY
+  users       UserTenant[]
   menus       Menu[]
   orders      Order[]
   queues      Queue[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // 3. Tabel Menu (Daftar Makanan per Toko)
@@ -35,9 +41,15 @@ model Menu {
   id          Int     @id @default(autoincrement())
   name        String
   price       Int
+  imageUrl    String?
   description String?
+  isAvailable Boolean  @default(true)
+
   tenantId    Int
   tenant      Tenant  @relation(fields: [tenantId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // 4. Tabel Order (Transaksi Pembelian)
@@ -74,4 +86,18 @@ model Queue {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UserTenant {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String   // Password ter-enkripsi
+  role      String   @default("TENANT_ADMIN") // Opsi: 'SUPER_ADMIN' atau 'TENANT_ADMIN'
+  
+  // Relasi: User ini pegang toko yang mana? 
+  // (Bisa null jika dia Super Admin yang tidak terikat toko)
+  tenantId  Int?     
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
 }
