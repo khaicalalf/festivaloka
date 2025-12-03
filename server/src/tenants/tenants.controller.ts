@@ -4,7 +4,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport'; // Guard JWT
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
-import { CreateMenuDto } from './dto/create-menu-tenant.dto';
+import { CreateMenuDto } from './dto/create-menu.dto';
+import { UpdateMenuDto } from './dto/update-menu.dto';
 
 @ApiTags('Tenants (Management)')
 @Controller('tenants')
@@ -22,7 +23,6 @@ export class TenantsController {
 
 
   // --- PROTECTED (Hanya Owner/Admin) ---
-
   @UseGuards(AuthGuard('jwt')) // 🔒 Wajib Login
   @ApiBearerAuth()             // 🔑 Tombol gembok di Swagger
   @Post()
@@ -91,5 +91,45 @@ export class TenantsController {
     }
 
     return this.tenantsService.addMenu(tenantId, data);
+  }
+
+  // --- UPDATE MENU ---
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Put('menus/:menuId') // URL: /tenants/menus/5
+  @ApiOperation({ summary: '[AUTH] Update Menu (Harga, Foto, Stok)' })
+  async updateMenu(
+    @Param('menuId', ParseIntPipe) menuId: number,
+    @Body() data: UpdateMenuDto,
+    @Request() req
+  ) {
+    // 1. Validasi dulu: Ini menu dia bukan?
+    await this.tenantsService.validateMenuOwnership(
+      menuId,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role
+    );
+
+    // 2. Kalau aman, baru update
+    return this.tenantsService.updateMenu(menuId, data);
+  }
+
+  // --- DELETE MENU ---
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @Delete('menus/:menuId') // URL: /tenants/menus/5
+  @ApiOperation({ summary: '[AUTH] Hapus Menu' })
+  async deleteMenu(@Param('menuId', ParseIntPipe) menuId: number, @Request() req) {
+    // 1. Validasi dulu
+    await this.tenantsService.validateMenuOwnership(
+      menuId,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role
+    );
+
+    // 2. Hapus
+    return this.tenantsService.deleteMenu(menuId);
   }
 }

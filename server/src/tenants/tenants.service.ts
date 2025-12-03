@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { CreateMenuDto } from './dto/create-menu.dto';
 
 const prisma = new PrismaClient();
 
@@ -80,7 +81,7 @@ export class TenantsService {
   }
 
   // 4. ADD MENU (Fitur tambahan)
-  async addMenu(tenantId: number, data: any) {
+  async addMenu(tenantId: number, data: CreateMenuDto) {
     return await prisma.menu.create({
       data: {
         name: data.name,
@@ -90,6 +91,42 @@ export class TenantsService {
         isAvailable: true,
         tenantId: tenantId
       }
+    });
+  }
+
+  // --- HELPER: Cek apakah Menu ini milik User yang login? ---
+  async validateMenuOwnership(menuId: number, userId: number, userTenantId: number, role: string) {
+    // 1. Kalau Super Admin, bebas akses
+    if (role === 'SUPER_ADMIN') return true;
+
+    // 2. Cari Menu di Database
+    const menu = await prisma.menu.findUnique({ where: { id: menuId } });
+    if (!menu) throw new NotFoundException(`Menu dengan ID ${menuId} tidak ditemukan`);
+
+    // 3. Cek apakah Tenant ID di menu SAMA dengan Tenant ID User?
+    if (menu.tenantId !== userTenantId) {
+      throw new UnauthorizedException("Anda tidak berhak mengedit menu toko lain!");
+    }
+  }
+
+  // --- UPDATE MENU ---
+  async updateMenu(menuId: number, data: any) {
+    return await prisma.menu.update({
+      where: { id: menuId },
+      data: {
+        name: data.name,
+        price: data.price ? Number(data.price) : undefined, // Pastikan angka
+        description: data.description,
+        imageUrl: data.imageUrl,
+        isAvailable: data.isAvailable // Bisa set true/false (Habis/Ada)
+      }
+    });
+  }
+
+  // --- DELETE MENU ---
+  async deleteMenu(menuId: number) {
+    return await prisma.menu.delete({
+      where: { id: menuId }
     });
   }
 }
