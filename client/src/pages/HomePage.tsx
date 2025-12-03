@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { usePreferences } from "../hooks/usePrefrerences";
 import { PreferenceForm } from "../components/preferences/PreferenceForm";
 import TenantSearch from "../components/tenants/TenantSearch";
+import MapForm from "../components/map/MapForm";
 import { OrderForm } from "../components/order/OrderForm";
 import { CheckoutModal } from "../components/order/CheckoutModal";
 import type { CartItem, MenuItem, Tenant } from "../types";
@@ -17,6 +18,7 @@ export function HomePage() {
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loadingMenu, setLoadingMenu] = useState(false);
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [contact, setContact] = useState({ email: "", phone: "" });
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -111,6 +113,10 @@ export function HomePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
       <h1 className="text-2xl font-bold mb-2">Food Court Digital</h1>
+      <section className="space-y-2">
+        <h2 className="font-semibold text-lg">Peta Lokasi</h2>
+        <MapForm />
+      </section>
       <section className="mb-4">
         {editingPref || isDefault ? (
           <PreferenceForm
