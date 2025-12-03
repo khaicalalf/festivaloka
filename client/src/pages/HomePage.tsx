@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePreferences } from "../hooks/usePrefrerences";
 import { PreferenceForm } from "../components/preferences/PreferenceForm";
-import { TenantList } from "../components/tenants/TenantList";
+import TenantSearch from "../components/tenants/TenantSearch";
 import { OrderForm } from "../components/order/OrderForm";
 import { CheckoutModal } from "../components/order/CheckoutModal";
 import type { CartItem, MenuItem, Tenant } from "../types";
@@ -133,7 +133,7 @@ export function HomePage() {
         {loadingTenants ? (
           <div className="animate-pulse bg-gray-200 h-24 rounded-md"></div>
         ) : (
-          <TenantList tenants={tenants} onSelectTenant={handleSelectTenant} />
+          <TenantSearch tenants={tenants} onSelectTenant={handleSelectTenant} />
         )}
       </section>
 
