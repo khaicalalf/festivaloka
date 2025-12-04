@@ -87,6 +87,7 @@ export class OrdersService {
     }
 
     // 2. Webhook Handler
+    // 2. Webhook Handler (LOGIC UTAMA DI SINI)
     async handleNotification(notification: any) {
         const orderId = notification.order_id;
         const transactionStatus = notification.transaction_status;
@@ -103,6 +104,7 @@ export class OrdersService {
 
         let newStatus = order.status;
 
+        // Logika Status Midtrans
         if (transactionStatus == 'capture') {
             if (fraudStatus == 'challenge') {
                 // Do nothing
@@ -123,23 +125,48 @@ export class OrdersService {
         if (newStatus === 'PAID' && order.status !== 'PAID') {
             console.log(`Order ${orderId} LUNAS. Generating Queue...`);
 
-            // 1. GENERATE ANTRIAN (Kirim ID Order)
-            // Sekarang fungsi ini sudah menerima parameter ke-2 (orderId)
-            const queue = await this.queuesService.joinQueue(order.tenantId, order.id);
+            // 🛠️ 1. LOGIC DOUBLE POIN (Di sini kita pasang)
+            // Kita cek antrian terakhir SEBELUM order ini masuk
+            const lastQueue = await prisma.queue.findFirst({
+                where: { tenantId: order.tenantId },
+                orderBy: { createdAt: 'desc' }
+            });
 
+            let pointMultiplier = 1;
+
+            if (lastQueue) {
+                // Hitung selisih waktu (Menit)
+                const now = new Date();
+                const diffMinutes = (now.getTime() - lastQueue.createdAt.getTime()) / 60000;
+
+                // Jika sudah sepi >= 45 menit, kasih 2x Poin
+                if (diffMinutes >= 45) {
+                    console.log(`💎 DOUBLE POINT APPLIED for Order ${orderId}! (Sepi ${Math.round(diffMinutes)} menit)`);
+                    pointMultiplier = 2;
+                }
+            } else {
+                // Jika toko belum pernah ada order sama sekali, kasih bonus
+                console.log(`💎 DOUBLE POINT APPLIED (First Customer)!`);
+                pointMultiplier = 2;
+            }
+
+            // 🛠️ 2. GENERATE ANTRIAN (Kirim ID Order)
+            const queue = await this.queuesService.joinQueue(order.tenantId, order.id);
             console.log(`Queue Created: ${queue.number}`);
 
-            // 2. Hitung Poin
-            const pointsEarned = Math.floor(order.totalAmount / 10000);
+            // 🛠️ 3. HITUNG POIN FINAL
+            // Rumus: (Total / 10.000) * Multiplier
+            const pointsEarned = Math.floor(order.totalAmount / 10000) * pointMultiplier;
 
-            // 3. Update DB
+            // 4. Update DB (Simpan Poin & Status)
             if (order.customer) {
                 await prisma.$transaction([
                     prisma.order.update({
                         where: { id: orderId },
                         data: {
                             status: 'PAID',
-                            queueNumber: queue.number
+                            queueNumber: queue.number,
+                            pointsEarned: pointsEarned // Pastikan kolom ini ada di schema.prisma order
                         }
                     }),
                     prisma.customer.update({
@@ -148,6 +175,7 @@ export class OrdersService {
                     })
                 ]);
             } else {
+                // Case user tamu (jarang terjadi kalau flow harus login dulu)
                 await prisma.order.update({
                     where: { id: orderId },
                     data: {

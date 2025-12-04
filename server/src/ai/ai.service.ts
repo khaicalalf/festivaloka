@@ -80,24 +80,27 @@ export class AiService {
     async getSmartRecommendations(preferences: string = "") {
         console.log(`🤖 AI Processing... Preferences: "${preferences || 'None'}"`);
 
+        // Setting: Toko dianggap sepi jika tidak ada order dalam 45 menit
+        const IDLE_THRESHOLD_MINUTES = 45;
+
         // 1. AMBIL DATA DARI DATABASE (Tenant + Menu + Queue History)
         const tenants = await this.prisma.tenant.findMany({
             include: {
                 menus: { select: { name: true, price: true } },
                 queues: {
                     take: 50, // Ambil sampel 50 antrian terakhir
-                    orderBy: { updatedAt: 'desc' },
+                    orderBy: { createdAt: 'desc' }, // Urutkan dari yang paling baru dibuat
                     select: { status: true, createdAt: true, updatedAt: true }
                 }
             }
         });
 
-        // 2. PRE-PROCESS DATA (Hitung Statistik Manual Dulu) 🛠️
+        // 2. PRE-PROCESS DATA (Hitung Statistik & Cek Promo Double Poin) 🛠️
         const tenantsContext = tenants.map(t => {
-            // Hitung jumlah antrian yang statusnya 'WAITING'
+            // A. Hitung Antrian 'WAITING'
             const waitingCount = t.queues.filter(q => q.status === 'WAITING').length;
 
-            // Hitung rata-rata kecepatan masak dari data 'DONE'
+            // B. Hitung Rata-rata Kecepatan Masak (Dari data 'DONE')
             const completedOrders = t.queues.filter(q => q.status === 'DONE');
             let avgPrepTimeMinutes = 10; // Default standar 10 menit
 
@@ -110,16 +113,40 @@ export class AiService {
                 avgPrepTimeMinutes = Math.round(totalDuration / completedOrders.length);
             }
 
-            // Siapkan objek ringkas untuk dikirim ke Prompt AI
+            // C. LOGIC DOUBLE POIN (Cek Kapan Order Terakhir Dibuat) 💎
+            // Kita cari order terakhir (status apa saja, yang penting ada aktivitas)
+            const lastActivity = t.queues[0]; // Karena sudah di sort desc di query
+            let isDoublePoint = false;
+            let minutesSinceLastOrder = 999; // Anggap lama banget kalau toko baru
+
+            if (lastActivity) {
+                const now = new Date();
+                const diffMs = now.getTime() - lastActivity.createdAt.getTime();
+                minutesSinceLastOrder = Math.round(diffMs / 60000);
+            }
+
+            // Jika toko baru (gapunya history) ATAU sudah sepi > 45 menit -> AKTIFKAN PROMO
+            if (!lastActivity || minutesSinceLastOrder >= IDLE_THRESHOLD_MINUTES) {
+                isDoublePoint = true;
+            }
+
+            // D. Siapkan Data untuk AI (Context)
             return {
                 id: t.id,
                 name: t.name,
                 category: t.category,
-                // Potong menu biar hemat token, ambil namanya saja
                 menus: t.menus.map(m => m.name).join(', ').substring(0, 200),
+
+                // Data Promo untuk AI pertimbangkan
+                promotion: {
+                    isDoublePoint: isDoublePoint,
+                    info: isDoublePoint ? "PROMO: Dapatkan 2x Poin karena toko sedang sepi!" : null
+                },
+
                 stats: {
                     currentQueue: waitingCount,
-                    avgSpeedPerOrder: avgPrepTimeMinutes
+                    avgSpeedPerOrder: avgPrepTimeMinutes,
+                    lastOrderMinutesAgo: minutesSinceLastOrder
                 }
             };
         });
@@ -134,15 +161,15 @@ export class AiService {
         Instruksi:
         1. FILTER: 
            - Jika User Request KOSONG: Analisa semua tenant.
-           - Jika User Request TERISI (misal: "Pedas", "Minuman"): HANYA pilih tenant yang relevan. Buang sisanya.
+           - Jika User Request TERISI: HANYA pilih tenant yang relevan dengan request.
         
-        2. PREDIKSI WAKTU (Wajib Logis):
-           - Rumus: (stats.currentQueue * stats.avgSpeedPerOrder).
-           - Jika currentQueue 0, estimasi adalah avgSpeedPerOrder (langsung masak).
-           - Berikan kalimat prediksi yang manusiawi (misal: "Sekitar 15 menit").
+        2. LOGIC SKOR & PROMO:
+           - Jika "promotion.isDoublePoint" bernilai TRUE, berikan BOOST SKOR (tambah nilai).
+           - Masukkan info promo ke dalam "reason" agar user tahu.
 
-        3. BERIKAN SKOR (0-100):
-           - Berdasarkan relevansi menu dan tingkat keramaian (makin sepi makin tinggi skornya, kecuali user cari yang viral).
+        3. PREDIKSI WAKTU:
+           - Rumus: (stats.currentQueue * stats.avgSpeedPerOrder).
+           - Jika 0, estimasi = "Langsung Masak".
 
         OUTPUT WAJIB JSON ARRAY MURNI:
         [
@@ -150,7 +177,7 @@ export class AiService {
             "id": 1,
             "relevanceScore": 95,
             "prediction": "Sekitar 10 Menit",
-            "reason": "Sangat cocok dengan request pedas, antrian sepi."
+            "reason": "Sangat cocok. Plus ada Promo Double Poin karena sedang sepi!"
           }
         ]
         `;
@@ -160,7 +187,6 @@ export class AiService {
             const url = 'https://api.kolosal.ai/v1/chat/completions';
             const apiKey = this.configService.get('API_KEY_KOLOSAL_AI');
 
-            // Gunakan lastValueFrom untuk mengubah Observable jadi Promise
             const response = await lastValueFrom(
                 this.httpService.post(url, {
                     model: 'Claude Sonnet 4.5',
@@ -174,42 +200,40 @@ export class AiService {
             );
 
             // 5. PARSING JSON YANG ROBUST (ANTI ERROR) 🛡️
-            // AI sering menambahkan teks basa-basi. Kita harus ambil murni JSON-nya saja.
             let textResult = response.data.choices?.[0]?.message?.content || "[]";
-
-            // Cari posisi kurung siku pertama '[' dan terakhir ']'
             const firstBracket = textResult.indexOf('[');
             const lastBracket = textResult.lastIndexOf(']');
 
             let aiRecommendations = [];
 
             if (firstBracket !== -1 && lastBracket !== -1) {
-                // Ambil text HANYA yang ada di dalam kurung siku
                 const jsonString = textResult.substring(firstBracket, lastBracket + 1);
-
                 try {
                     aiRecommendations = JSON.parse(jsonString);
                 } catch (e) {
-                    // Jika JSON rusak, lempar error biar ditangkap Catch di bawah (Fallback)
                     throw new Error(`JSON Parse Error: ${e.message}`);
                 }
             } else {
-                // Jika AI ngelantur gak kasih array
                 throw new Error("AI Response format invalid (No JSON Array found)");
             }
 
             // 6. GABUNGKAN DATA (HYDRATION)
+            // Kita gabungkan hasil AI dengan Data Promo yang sudah kita hitung di awal
             const finalResult = aiRecommendations.map((rec: any) => {
-                const originalTenant = tenants.find(t => t.id === rec.id);
-                if (!originalTenant) return null; // Skip jika ID ngaco
+                // Cari data original (termasuk status promo) dari tenantsContext
+                const contextData = tenantsContext.find(t => t.id === rec.id);
+                const originalDbData = tenants.find(t => t.id === rec.id);
 
-                // Hitung ulang antrian waiting buat ditampilkan di UI
-                const waitingCount = originalTenant.queues.filter(q => q.status === 'WAITING').length;
+                if (!contextData || !originalDbData) return null;
 
                 return {
-                    ...originalTenant,
-                    queues: undefined, // Hapus data raw queue biar ringan
-                    queueCount: waitingCount, // Ganti dengan angka saja
+                    ...originalDbData, // Data DB (Nama, Gambar, dll)
+                    queues: undefined, // Bersihkan raw queue
+
+                    // Masukkan Info Promo ke Root Object biar enak dibaca Frontend
+                    promotion: contextData.promotion,
+                    queueCount: contextData.stats.currentQueue,
+
                     ai_insight: {
                         score: rec.relevanceScore,
                         wait_prediction: rec.prediction,
@@ -224,30 +248,28 @@ export class AiService {
         } catch (error) {
             console.error("⚠️ AI Service Error (Switching to Fallback):", error.message);
 
-            // --- FALLBACK MANUAL (JIKA AI MATI/ERROR) ---
-            // Kita kembalikan data tenant biasa dengan hitungan manual
-            return tenants.map(t => {
-                const waitingCount = t.queues.filter(q => q.status === 'WAITING').length;
+            // --- FALLBACK MANUAL (JIKA AI MATI) ---
+            // Tetap jalankan fitur Double Poin meskipun AI mati
+            return tenantsContext.map(ctx => {
+                const originalDbData = tenants.find(t => t.id === ctx.id);
 
-                // Hitung manual kasar
-                const completedOrders = t.queues.filter(q => q.status === 'DONE');
-                let avgSpeed = 10;
-                if (completedOrders.length > 0) {
-                    avgSpeed = Math.round(completedOrders.reduce((acc, c) => acc + (c.updatedAt.getTime() - c.createdAt.getTime()) / 60000, 0) / completedOrders.length);
-                }
-                const estTime = waitingCount * avgSpeed;
+                // Hitung estimasi waktu manual
+                const estTime = ctx.stats.currentQueue * ctx.stats.avgSpeedPerOrder;
 
                 return {
-                    ...t,
+                    ...originalDbData,
                     queues: undefined,
-                    queueCount: waitingCount,
+                    promotion: ctx.promotion, // Promo tetap jalan!
+                    queueCount: ctx.stats.currentQueue,
                     ai_insight: {
-                        score: 50, // Skor rata-rata
-                        wait_prediction: estTime === 0 ? `${avgSpeed} Menit` : `± ${estTime} Menit`,
-                        reason: "Mode Hemat Daya (AI Offline), estimasi berdasarkan antrian."
+                        score: ctx.promotion.isDoublePoint ? 80 : 50, // Boost manual kalau promo
+                        wait_prediction: estTime === 0 ? `Langsung` : `± ${estTime} Menit`,
+                        reason: ctx.promotion.isDoublePoint
+                            ? "Mode Offline. Ada Promo Double Poin!"
+                            : "Mode Offline."
                     }
                 };
-            }).sort((a, b) => a.queueCount - b.queueCount); // Sort dari yang paling sepi
+            }).sort((a, b) => b.ai_insight.score - a.ai_insight.score);
         }
     }
 

@@ -59,6 +59,7 @@ model Order {
   status      String   @default("PENDING")
   queueNumber String?
   items       Json?
+  pointsEarned Int      @default(0)
 
   // RELASI BALIK (Tanpa 'fields' & 'references')
   queue       Queue?   
