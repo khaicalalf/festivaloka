@@ -154,11 +154,14 @@ export function HomePage() {
 
   const processVoiceCommand = async (text: string) => {
     try {
-      const res = await fetch("/api/kolosal-ai/voiceOrder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text }),
-      });
+      const res = await fetch(
+        "https://festivaloka-dev.up.railway.app/api/kolosal-ai/voice-order",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: text }),
+        }
+      );
 
       const data = await res.json();
 
@@ -277,6 +280,7 @@ export function HomePage() {
         cart={cart}
         preferences={preferences ? JSON.stringify(preferences) : ""}
         contact={contact}
+        onContactChange={setContact}
         onConfirm={handleCheckoutConfirm}
         loading={checkoutLoading}
       />
