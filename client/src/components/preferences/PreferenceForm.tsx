@@ -1,13 +1,13 @@
 import type { FormEvent } from "react";
-import type { FoodPreference } from "../../types";
 
 type Props = {
-  value: FoodPreference;
-  onChange: (next: FoodPreference) => void;
+  value: string; // preferensi bebas
+  onChange: (next: string) => void;
   onSubmit: () => void;
+  onClose?: () => void; // tombol tutup
 };
 
-export function PreferenceForm({ value, onChange, onSubmit }: Props) {
+export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit();
@@ -16,57 +16,43 @@ export function PreferenceForm({ value, onChange, onSubmit }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 border rounded-lg p-4 mb-4"
+      className="space-y-3 border rounded-xl p-4 mb-4 bg-white/70 backdrop-blur shadow-sm animate-slide-up"
     >
       <h2 className="font-semibold text-lg">Preferensi Makananmu</h2>
 
-      <div>
-        <label className="block text-sm mb-1">Level Pedas</label>
-        <select
-          className="border rounded px-2 py-1"
-          value={value.spicyLevel}
-          onChange={(e) =>
-            onChange({
-              ...value,
-              spicyLevel: e.target.value as FoodPreference["spicyLevel"],
-            })
-          }
+      <p className="text-xs opacity-70">
+        Tulis selera makananmu, misalnya: “suka pedas”, “mau yang cepat saji”,
+        “cari minuman manis”.
+      </p>
+
+      {/* TEXTAREA */}
+      <textarea
+        className="border rounded-lg px-3 py-2 w-full resize-none focus:outline-none focus:ring focus:ring-gray-300"
+        rows={3}
+        value={value}
+        placeholder="contoh: suka pedas, suka bakso, suka minuman dingin…"
+        onChange={(e) => onChange(e.target.value)}
+      />
+
+      {/* BUTTONS */}
+      <div className="flex gap-3 pt-1">
+        <button
+          type="submit"
+          className="flex-1 bg-black text-white py-2 rounded-lg text-sm shadow-md hover:bg-neutral-900 transition"
         >
-          <option value="mild">Tidak terlalu pedas</option>
-          <option value="medium">Sedang</option>
-          <option value="hot">Pedas banget</option>
-        </select>
-      </div>
+          Simpan
+        </button>
 
-      <div className="flex items-center gap-2">
-        <input
-          id="halalOnly"
-          type="checkbox"
-          checked={value.halalOnly}
-          onChange={(e) => onChange({ ...value, halalOnly: e.target.checked })}
-        />
-        <label htmlFor="halalOnly" className="text-sm">
-          Hanya tampilkan menu halal
-        </label>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 border py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 transition"
+          >
+            Tutup
+          </button>
+        )}
       </div>
-
-      <div>
-        <label className="block text-sm mb-1">Catatan khusus</label>
-        <textarea
-          className="border rounded px-2 py-1 w-full"
-          rows={2}
-          value={value.notes ?? ""}
-          onChange={(e) => onChange({ ...value, notes: e.target.value })}
-          placeholder="Misal: alergi udang, suka manis, dll..."
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="bg-black text-white text-sm px-4 py-2 rounded"
-      >
-        Simpan Preferensi
-      </button>
     </form>
   );
 }

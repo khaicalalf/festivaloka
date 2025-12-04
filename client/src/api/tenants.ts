@@ -5,6 +5,13 @@ export async function fetchTenants(): Promise<Tenant[]> {
   return apiClient.request<Tenant[]>("/api/tenants");
 }
 
+export async function getTenantsByAI(ref: string | null): Promise<Tenant[]> {
+  const query = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+  return apiClient.request<Tenant[]>(`/api/kolosal-ai/tenantsByAI${query}`, {
+    method: "GET",
+  });
+}
+
 export async function fetchTenantMenu(tenantId: string): Promise<Tenant> {
   return apiClient.request(`/api/tenants/${tenantId}`);
 }
