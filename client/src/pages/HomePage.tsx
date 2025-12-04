@@ -11,7 +11,9 @@ import { fetchTenants, getTenantsByAI } from "../api/tenants";
 import { mapCartToPayloadItems } from "../api/transactions";
 
 export function HomePage() {
-  const [preferences, setPreferences] = useState(null);
+  const [preferences, setPreferences] = useState<string>(
+    localStorage.getItem("preferences") ?? ""
+  );
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(false);
@@ -101,6 +103,73 @@ export function HomePage() {
     });
   };
 
+  const startVoiceInput = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Browser kamu tidak mendukung voice input.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "id-ID";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onresult = async (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      console.log("Voice input:", transcript);
+      await processVoiceCommand(transcript);
+    };
+
+    recognition.onerror = (e) => {
+      console.error("Speech error:", e);
+    };
+
+    recognition.start();
+  };
+
+  const applyAIRecommendation = async (
+    tenantId: string,
+    menuId: number,
+    quantity: number
+  ) => {
+    // 1. Fetch tenant
+
+    const tenantData = await fetchTenantMenu(tenantId);
+    setSelectedTenant(tenantData);
+    setMenu(tenantData.menus);
+
+    // 2. Cari menu yang dipilih AI
+    const menuItem = tenantData.menus.find((m) => Number(m.id) === menuId);
+    if (!menuItem) return;
+
+    // 3. Masukkan ke cart
+    setCart([{ menuItem, quantity }]);
+
+    // 4. Buka modal checkout
+    setCheckoutOpen(true);
+  };
+
+  const processVoiceCommand = async (text: string) => {
+    try {
+      const res = await fetch("/api/kolosal-ai/voiceOrder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: text }),
+      });
+
+      const data = await res.json();
+
+      const { tenantId, menuId, quantity } = data;
+
+      await applyAIRecommendation(tenantId, menuId, quantity);
+    } catch (e) {
+      console.error("Voice AI error:", e);
+    }
+  };
+
   /* CHECKOUT */
   const handleCheckoutConfirm = async () => {
     if (!selectedTenant) return;
@@ -142,9 +211,10 @@ export function HomePage() {
       <section>
         {!isCollapsed || editingPref ? (
           <PreferenceForm
-            value={preferences ? JSON.stringify(preferences) : ""}
-            onChange={(str) => setPreferences(str ? JSON.parse(str) : null)}
+            value={preferences ?? ""}
+            onChange={setPreferences}
             onSubmit={() => {
+              localStorage.setItem("preferences", preferences);
               setEditingPref(false);
               setIsCollapsed(true);
             }}
@@ -155,7 +225,7 @@ export function HomePage() {
           />
         ) : (
           <PreferenceSummary
-            pref={preferences ? JSON.stringify(preferences) : ""}
+            pref={preferences ?? ""}
             onEdit={() => {
               setEditingPref(true);
               setIsCollapsed(false);
@@ -163,6 +233,12 @@ export function HomePage() {
           />
         )}
       </section>
+      <button
+        onClick={startVoiceInput}
+        className="px-4 py-2 rounded-lg bg-black text-white text-sm shadow"
+      >
+        🎤 Bicara ke AI
+      </button>
 
       {/* Tenant List */}
       <section className="space-y-2">
