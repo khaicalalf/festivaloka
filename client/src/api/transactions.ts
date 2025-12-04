@@ -32,7 +32,8 @@ export async function getTransactionDetail(
 // helper convert cart
 export function mapCartToPayloadItems(cart: CartItem[]) {
   return cart.map((c) => ({
-    menuItemId: c.menuItem.id,
-    quantity: c.quantity,
+    name: c.menuItem.name,
+    price: c.menuItem.price,
+    qty: c.quantity,
   }));
 }

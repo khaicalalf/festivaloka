@@ -7,7 +7,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/transaction/:uuid" element={<TransactionResultPage />} />
+        <Route path="/transaction/:id" element={<TransactionResultPage />} />
       </Routes>
     </BrowserRouter>
   );
