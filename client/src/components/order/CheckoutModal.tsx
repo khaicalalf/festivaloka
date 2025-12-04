@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import type { CartItem, FoodPreference } from "../../types";
+import type { CartItem } from "../../types";
 
 type ModalProps = {
   open: boolean;
   onClose: () => void;
   cart: CartItem[];
-  preferences: FoodPreference;
+  preferences?: string;
   contact: { email: string; phone: string };
   onConfirm: () => void;
   loading?: boolean;
@@ -59,9 +59,7 @@ export function CheckoutModal({
         {/* preferensi */}
         <div className="border rounded p-2 text-xs space-y-1">
           <p className="font-semibold">Preferensi</p>
-          <p>Pedas: {preferences.spicyLevel}</p>
-          <p>Halal: {preferences.halalOnly ? "Ya" : "Tidak"}</p>
-          {preferences.notes && <p>Catatan: {preferences.notes}</p>}
+          <p>{preferences}</p>
         </div>
 
         {/* kontak */}
