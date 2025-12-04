@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { usePreferences } from "../hooks/usePrefrerences";
+//import { usePreferences } from "../hooks/usePrefrerences";
 import { PreferenceForm } from "../components/preferences/PreferenceForm";
 import { PreferenceSummary } from "../components/preferences/PreferenceSummary";
 import { TenantList } from "../components/tenants/TenantList";
@@ -11,7 +11,7 @@ import { fetchTenants, getTenantsByAI } from "../api/tenants";
 import { mapCartToPayloadItems } from "../api/transactions";
 
 export function HomePage() {
-  const { preferences, setPreferences } = usePreferences();
+  const [preferences, setPreferences] = useState(null);
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(false);
@@ -199,7 +199,7 @@ export function HomePage() {
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
         cart={cart}
-        preferences={preferences}
+        preferences={preferences ? JSON.stringify(preferences) : ""}
         contact={contact}
         onConfirm={handleCheckoutConfirm}
         loading={checkoutLoading}
