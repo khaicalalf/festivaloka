@@ -5,8 +5,8 @@ import { TenantList } from "../components/tenants/TenantList";
 import { OrderForm } from "../components/order/OrderForm";
 import { CheckoutModal } from "../components/order/CheckoutModal";
 import type { CartItem, MenuItem, Tenant } from "../types";
-import { fetchTenants, fetchTenantMenu } from "../api/tenants";
-import { createTransaction, mapCartToPayloadItems } from "../api/transactions";
+import { fetchTenants, fetchTenantMenu, checkoutOrder } from "../api/tenants";
+import { mapCartToPayloadItems } from "../api/transactions";
 import { PreferenceSummary } from "../components/preferences/PreferenceSummary";
 //import { useNavigate } from "react-router-dom";
 
@@ -84,27 +84,30 @@ export function HomePage() {
 
   const handleCheckoutConfirm = async () => {
     if (!selectedTenant) return;
+
     setCheckoutLoading(true);
+
     try {
+      const items = mapCartToPayloadItems(cart);
+
       const payload = {
-        tenantId: selectedTenant.id,
-        items: mapCartToPayloadItems(cart),
-        email: contact.email || undefined,
+        email: contact.email,
         phone: contact.phone,
-        preferences,
+        tenantId: Number(selectedTenant.id),
+        totalAmount: Number(
+          cart.reduce((sum, c) => sum + c.menuItem.price * c.quantity, 0)
+        ),
+        items,
       };
-
-      const res = await createTransaction(payload);
-
-      // optional: simpan uuid terakhir kalau mau
-      // window.localStorage.setItem("last-transaction-uuid", res.uuid);
-
-      // langsung lempar ke Midtrans
-      window.location.href = res.redirectUrl;
-    } catch (e) {
-      console.error(e);
+      console.log("Checkout payload:", payload);
+      const res = await checkoutOrder(payload);
+      console.log("Checkout response:", res);
+      // Redirect ke Midtrans Snap
+      window.location.href = `https://app.sandbox.midtrans.com/snap/v4/redirection/${res.snapToken}`;
+    } catch (e: unknown) {
+      console.error("Checkout error:", e);
+    } finally {
       setCheckoutLoading(false);
-      // di real app, tampilkan toast error
     }
   };
 

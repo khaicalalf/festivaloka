@@ -42,3 +42,33 @@ export type TransactionDetail = {
   tenantName: string;
   createdAt: string;
 };
+
+export type OrderResult = {
+  id: string;
+  totalAmount: number;
+  status: "PAID" | "PENDING" | "FAILED" | "CANCEL";
+  queueNumber?: string;
+  queueStatus?: "WAITING" | "PROCESSING" | "FINISHED" | "CANCELLED";
+
+  items: {
+    qty: number;
+    name: string;
+    price: number;
+  }[];
+
+  tenant: {
+    id: number;
+    name: string;
+    category: string;
+    description: string;
+    imageUrl?: string;
+    address?: string;
+    status: string;
+  };
+
+  customer?: {
+    id: number;
+    email: string;
+    phone: string;
+  };
+};
