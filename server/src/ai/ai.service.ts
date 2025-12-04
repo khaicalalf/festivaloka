@@ -250,4 +250,113 @@ export class AiService {
             }).sort((a, b) => a.queueCount - b.queueCount); // Sort dari yang paling sepi
         }
     }
+
+    async predictOrderFromVoice(speechText: string) {
+        console.log(`🎤 Voice Input: "${speechText}"`);
+
+        // 1. SIAPKAN DATA (Menu + Tenant + Estimasi Waktu)
+        const tenants = await this.prisma.tenant.findMany({
+            include: {
+                menus: true,
+                queues: {
+                    where: { status: 'WAITING' }, // Cuma butuh antrian aktif
+                    select: { id: true } // Hemat memori
+                }
+            }
+        });
+
+        // 2. FLATTEN DATA (Jadikan List Menu Datar untuk AI)
+        // Kita butuh format text yang gampang dibaca AI
+        let menuContext: any[] = [];
+
+        tenants.forEach(t => {
+            // Hitung kasar keramaian (Antrian * 10 menit)
+            const estTime = t.queues.length * 10;
+            const crowdStatus = t.queues.length > 5 ? "Ramai/Lama" : "Sepi/Cepat";
+
+            t.menus.forEach(m => {
+                if (m.isAvailable) {
+                    menuContext.push({
+                        tenantId: t.id,
+                        tenantName: t.name,
+                        menuId: m.id,
+                        menuName: m.name,
+                        price: m.price,
+                        description: m.description,
+                        // Data Kontekstual untuk AI:
+                        waitInfo: `${t.queues.length} antrian (${crowdStatus}, ±${estTime} menit)`,
+                        tags: t.category // Tambahan info kategori
+                    });
+                }
+            });
+        });
+
+        // 3. PROMPT ENGINEERING 🧠
+        const prompt = `
+        Daftar Menu Tersedia:
+        ${JSON.stringify(menuContext)}
+
+        User Berkata: "${speechText}"
+
+        Tugasmu:
+        1. Analisa keinginan user (Rasa, Kecepatan/Waktu, Harga, Kuantitas).
+        2. PILIH SATU MENU yang paling cocok dari daftar di atas.
+           - Jika user bilang "cepet", pilih yang antriannya sedikit.
+           - Jika user bilang jumlah (misal: "dua porsi"), isi field quantity. Default quantity = 1.
+        3. Jawab HANYA JSON Object (Tanpa markdown):
+        
+        {
+          "tenantId": 1,
+          "menuId": 5,
+          "quantity": 1,
+          "reason": "Alasan singkat (untuk debug)"
+        }
+        `;
+
+        // 4. TEMBAK KE AI
+        try {
+            const url = 'https://api.kolosal.ai/v1/chat/completions';
+            const apiKey = this.configService.get('API_KEY_KOLOSAL_AI');
+
+            const response = await lastValueFrom(
+                this.httpService.post(url, {
+                    model: 'Claude Sonnet 4.5',
+                    messages: [{ role: 'user', content: prompt }]
+                }, {
+                    headers: { 'Authorization': 'Bearer ' + apiKey }
+                })
+            );
+
+            // 5. PARSING JSON (Pake teknik substring yg aman tadi)
+            let textResult = response.data.choices?.[0]?.message?.content || "{}";
+            const firstBrace = textResult.indexOf('{');
+            const lastBrace = textResult.lastIndexOf('}');
+
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                const jsonString = textResult.substring(firstBrace, lastBrace + 1);
+                const result = JSON.parse(jsonString);
+
+                // Kembalikan format final yang diminta
+                return {
+                    tenantId: result.tenantId,
+                    menuId: result.menuId,
+                    quantity: result.quantity || 1,
+                    // Opsional: Saya sertakan alasan AI biar seru dilihat di console FE
+                    _debug_reason: result.reason
+                };
+            } else {
+                throw new Error("Format AI tidak valid");
+            }
+
+        } catch (error) {
+            console.error("Voice AI Error:", error.message);
+            // Fallback: Kembalikan null atau error biar FE tau AI gagal mengerti
+            return {
+                tenantId: null,
+                menuId: null,
+                quantity: 1,
+                error: "Maaf, saya tidak mengerti pesanan Anda."
+            };
+        }
+    }
 }

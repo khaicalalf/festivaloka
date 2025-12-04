@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { VoiceOrderDto } from './dto/voice-order.dto';
 
 @ApiTags('Kolosal AI')
 @Controller('kolosal-ai')
@@ -30,5 +31,11 @@ export class AiController {
   })
   async recommend(@Body('preferences') preferences: string[]) {
     return this.aiService.recommend(preferences);
+  }
+
+  @Post('voice-order')
+  @ApiOperation({ summary: 'Terjemahkan Suara User jadi Order (JSON)' })
+  async orderFromVoice(@Body() data: VoiceOrderDto) {
+    return this.aiService.predictOrderFromVoice(data.speechText);
   }
 }
