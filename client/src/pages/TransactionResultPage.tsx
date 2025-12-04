@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { fetchOrderResult } from "../api/orders";
 import type { OrderResult } from "../types";
@@ -12,141 +12,167 @@ export function TransactionResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // STEP 1: Extract ID (path > query)
+  /* CLEAN REDIRECT LOGIC */
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const queryId = params.get("order_id");
 
-    // If path ID missing but query ID exists → redirect to clean URL
     if (!pathId && queryId) {
       navigate(`/transaction/${queryId}`, { replace: true });
       return;
     }
 
-    // If path exists but Midtrans appended params (query)
     if (pathId && queryId && pathId !== queryId) {
       navigate(`/transaction/${queryId}`, { replace: true });
       return;
     }
 
-    // If path exists & url has query params → clean it
     if (pathId && location.search) {
       navigate(`/transaction/${pathId}`, { replace: true });
     }
   }, [pathId, location, navigate]);
 
-  // STEP 2: Fetch data (after URL cleaned)
-  useEffect(() => {
+  /* Fetch wrapper */
+  const loadOrder = useCallback(async () => {
     if (!pathId) return;
-
-    setLoading(true);
-    setError(null);
-
-    const load = async () => {
-      try {
-        const res = await fetchOrderResult(pathId);
-        setOrder(res);
-      } catch (e: unknown) {
-        if (e instanceof Error) setError(e.message);
-        else setError("Gagal memuat detail transaksi.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
+    try {
+      const data = await fetchOrderResult(pathId);
+      setOrder(data);
+    } catch (e) {
+      if (e instanceof Error) setError(e.message);
+      else setError("Gagal memuat detail transaksi.");
+    } finally {
+      setLoading(false);
+    }
   }, [pathId]);
 
-  // --- Loading UI ---
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  /* Auto Refresh Pending */
+  useEffect(() => {
+    if (!order) return;
+
+    const stillPending =
+      order.status === "PENDING" ||
+      order.queueStatus === "WAITING" ||
+      order.queueStatus === "PROCESSING";
+
+    if (!stillPending) return;
+
+    const t = setTimeout(() => loadOrder(), 2000);
+    return () => clearTimeout(t);
+  }, [order, loadOrder]);
+
+  /* Loading Skeleton */
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto p-6">
-        <p className="text-gray-500">Sedang memuat transaksi...</p>
+      <div className="max-w-lg mx-auto p-6 space-y-6">
+        <div className="h-8 w-52 rounded-xl shimmer"></div>
+        <div className="h-24 rounded-xl shimmer"></div>
+        <div className="h-24 rounded-xl shimmer"></div>
+        <div className="h-32 rounded-xl shimmer"></div>
       </div>
     );
   }
 
-  // --- Error UI ---
   if (error || !order) {
     return (
-      <div className="max-w-lg mx-auto p-6 space-y-3">
-        <p className="text-red-600 font-medium">
-          Terjadi kesalahan: {error ?? "Tidak ada data"}
+      <div className="max-w-lg mx-auto p-6 space-y-4 animate-fade-in">
+        <p className="text-red-600 font-medium text-lg">
+          Terjadi kesalahan: {error}
         </p>
-        <Link to="/" className="underline text-sm">
+        <Link to="/" className="text-blue-600 underline">
           Kembali ke Beranda
         </Link>
       </div>
     );
   }
 
-  // --- STATUS COLORS ---
-  const statusColor = {
-    PAID: "bg-green-100 text-green-700",
-    PENDING: "bg-yellow-100 text-yellow-700",
-    FAILED: "bg-red-100 text-red-700",
-    CANCEL: "bg-gray-200 text-gray-700",
-  }[order.status];
-
-  const queueColor = {
-    WAITING: "bg-blue-100 text-blue-700",
-    PROCESSING: "bg-yellow-100 text-yellow-800",
-    FINISHED: "bg-green-100 text-green-800",
-    CANCELLED: "bg-red-100 text-red-800",
-  }[order.queueStatus ?? "WAITING"];
+  /* Premium Colors */
+  const statusMap = {
+    PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+    FAILED: "bg-red-50 text-red-700 border-red-200",
+    CANCEL: "bg-gray-50 text-gray-700 border-gray-200",
+  };
 
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-6">
-      {/* --- Title --- */}
-      <h1 className="text-xl font-bold">Detail Transaksi</h1>
+    <div className="max-w-lg mx-auto p-6 space-y-6 animate-fade-in premium-container">
+      {/* HEADER */}
+      <h1 className="text-2xl font-semibold tracking-tight animate-slide-up">
+        Ringkasan Transaksi
+      </h1>
 
-      {/* --- Payment Status --- */}
-      <div className={`p-4 rounded shadow-sm ${statusColor}`}>
-        <p className="font-semibold text-lg">Status Pembayaran</p>
-        <p className="text-sm">{order.status}</p>
-      </div>
+      {/* PAYMENT STATUS */}
 
-      {/* --- Queue Status --- */}
-      {order.queueNumber && (
-        <div className={`p-4 rounded shadow-sm ${queueColor}`}>
-          <p className="font-semibold text-lg">Nomor Antrian</p>
-          <p className="text-2xl font-bold">{order.queueNumber}</p>
-          <p className="text-sm mt-1">Status: {order.queueStatus}</p>
-        </div>
-      )}
+      <div
+        className={`rounded-xl border p-5 shadow-sm animate-slide-up ${
+          statusMap[order.status]
+        }`}
+      >
+        <p className="font-semibold text-lg flex items-center gap-2">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-current"></span>
+          Status Pembayaran
+        </p>
 
-      {/* --- Tenant Info --- */}
-      <div className="border rounded p-4 shadow-sm">
-        <p className="font-semibold text-lg">{order.tenant.name}</p>
-        {order.tenant.address && (
-          <p className="text-sm text-gray-600">{order.tenant.address}</p>
+        <p className="text-sm mt-1">{order.status}</p>
+
+        {order.status === "PENDING" && (
+          <p className="text-xs mt-1 opacity-80 animate-pulse-slow">
+            Menunggu konfirmasi pembayaran...
+          </p>
         )}
       </div>
 
-      {/* --- Order Summary --- */}
-      <div className="border rounded p-4 shadow-sm">
-        <p className="font-semibold text-lg mb-3">Pesanan</p>
+      {/* QUEUE STATUS */}
+      {order.queueNumber && (
+        <div className="rounded-xl border p-5 shadow-sm animate-slide-up">
+          <p className="font-semibold text-lg">Nomor Antrian</p>
 
-        {order.items.map((item, i) => (
-          <div key={i} className="flex justify-between text-sm py-1">
-            <p>
-              {item.name} × {item.qty}
-            </p>
-            <p>Rp{(item.price * item.qty).toLocaleString("id-ID")}</p>
-          </div>
-        ))}
+          <p className="text-4xl font-bold tracking-tight mt-1">
+            {order.queueNumber}
+          </p>
 
-        <hr className="my-2" />
+          <p className="text-sm mt-1 opacity-90">Status: {order.queueStatus}</p>
+        </div>
+      )}
 
-        <p className="font-semibold text-right text-lg">
-          Total: Rp{order.totalAmount.toLocaleString("id-ID")}
+      {/* TENANT INFO */}
+      <div className="rounded-xl border p-5 shadow-inner-sm animate-slide-up bg-white/70 backdrop-blur">
+        <p className="font-semibold text-lg">{order.tenant.name}</p>
+        {order.tenant.address && (
+          <p className="text-sm mt-0.5 opacity-70">{order.tenant.address}</p>
+        )}
+      </div>
+
+      {/* ORDER ITEMS */}
+      <div className="rounded-xl border p-5 shadow-inner-sm animate-slide-up bg-white/70 backdrop-blur">
+        <p className="font-semibold text-lg mb-3">Detail Pesanan</p>
+
+        <div className="space-y-2">
+          {order.items.map((item, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <p className="opacity-80">
+                {item.name} × {item.qty}
+              </p>
+              <p>Rp{(item.price * item.qty).toLocaleString("id-ID")}</p>
+            </div>
+          ))}
+        </div>
+
+        <hr className="my-3" />
+
+        <p className="font-semibold text-right text-xl">
+          Rp{order.totalAmount.toLocaleString("id-ID")}
         </p>
       </div>
 
-      {/* --- Back button --- */}
+      {/* BACK BUTTON */}
       <Link
         to="/"
-        className="block text-center bg-black text-white py-2 rounded shadow-sm"
+        className="block text-center bg-black text-white py-3 rounded-xl shadow-md hover:bg-neutral-900 transition-all duration-200 animate-slide-up"
       >
         Kembali ke Beranda
       </Link>
