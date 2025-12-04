@@ -95,6 +95,7 @@ export class OrdersService {
 
         console.log(`WEBHOOK: Order ${orderId} status ${transactionStatus}`);
 
+        // Pastikan kita ambil data customer
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: { customer: true }
@@ -104,20 +105,13 @@ export class OrdersService {
 
         let newStatus = order.status;
 
-        // Logika Status Midtrans
+        // --- Logika Status Midtrans (Tetap) ---
         if (transactionStatus == 'capture') {
-            if (fraudStatus == 'challenge') {
-                // Do nothing
-            } else if (fraudStatus == 'accept') {
-                newStatus = 'PAID';
-            }
+            if (fraudStatus == 'challenge') { /* ... */ }
+            else if (fraudStatus == 'accept') { newStatus = 'PAID'; }
         } else if (transactionStatus == 'settlement') {
             newStatus = 'PAID';
-        } else if (
-            transactionStatus == 'cancel' ||
-            transactionStatus == 'deny' ||
-            transactionStatus == 'expire'
-        ) {
+        } else if (['cancel', 'deny', 'expire'].includes(transactionStatus)) {
             newStatus = 'CANCELLED';
         }
 
@@ -125,19 +119,14 @@ export class OrdersService {
         if (newStatus === 'PAID' && order.status !== 'PAID') {
             console.log(`Order ${orderId} LUNAS. Generating Queue...`);
 
-            // 🛠️ 1. LOGIC DOUBLE POIN (Di sini kita pasang)
-            // Kita cek antrian terakhir SEBELUM order ini masuk
+            // 1. LOGIC DOUBLE POIN (Tetap kita pakai biar makin seru!) 💎
             const lastQueue = await prisma.queue.findFirst({
                 where: { tenantId: order.tenantId },
                 orderBy: { createdAt: 'desc' }
             });
 
-            // B. Cek Jumlah Antrian Aktif (WAITING) saat ini
             const currentWaiting = await prisma.queue.count({
-                where: {
-                    tenantId: order.tenantId,
-                    status: 'WAITING'
-                }
+                where: { tenantId: order.tenantId, status: 'WAITING' }
             });
 
             let pointMultiplier = 1;
@@ -146,25 +135,35 @@ export class OrdersService {
                 const now = new Date();
                 const diffMinutes = (now.getTime() - lastQueue.createdAt.getTime()) / 60000;
 
-                // Syarat: Sepi > 45 menit DAN Antrian Kosong (0)
+                // Syarat Promo: Sepi > 45 menit & Antrian 0
                 if (diffMinutes >= 45 && currentWaiting === 0) {
-                    console.log(`💎 DOUBLE POINT APPLIED! (Sepi ${Math.round(diffMinutes)} menit & Antrian 0)`);
+                    console.log(`💎 DOUBLE POINT! (Sepi ${Math.round(diffMinutes)} menit)`);
                     pointMultiplier = 2;
                 }
             } else {
-                // Toko baru buka/belum pernah laku -> Double Poin
-                pointMultiplier = 2;
+                pointMultiplier = 2; // Toko baru buka/belum pernah laku
             }
 
-            // 🛠️ 2. GENERATE ANTRIAN (Kirim ID Order)
+            // 2. GENERATE ANTRIAN
             const queue = await this.queuesService.joinQueue(order.tenantId, order.id);
-            console.log(`Queue Created: ${queue.number}`);
 
-            // 🛠️ 3. HITUNG POIN FINAL
-            // Rumus: (Total / 10.000) * Multiplier
-            const pointsEarned = Math.floor(order.totalAmount / 10000) * pointMultiplier;
+            // 3. HITUNG POIN BERDASARKAN QUANTITY (LOGIC BARU) 🆕
+            // Kita ambil array items dari JSON order
+            const items = order.items as any[];
 
-            // 4. Update DB (Simpan Poin & Status)
+            // Hitung total Qty
+            let totalQty = 0;
+            if (Array.isArray(items)) {
+                totalQty = items.reduce((acc, item) => acc + (item.qty || 1), 0);
+            }
+
+            // Rumus: Total Qty * Multiplier
+            // Misal: Beli 5 item. Kalau normal = 5 poin. Kalau promo = 10 poin.
+            const pointsEarned = totalQty * pointMultiplier;
+
+            console.log(`POIN: Beli ${totalQty} items x ${pointMultiplier} = ${pointsEarned} Poin`);
+
+            // 4. Update DB
             if (order.customer) {
                 await prisma.$transaction([
                     prisma.order.update({
@@ -172,7 +171,7 @@ export class OrdersService {
                         data: {
                             status: 'PAID',
                             queueNumber: queue.number,
-                            pointsEarned: pointsEarned // Pastikan kolom ini ada di schema.prisma order
+                            pointsEarned: pointsEarned
                         }
                     }),
                     prisma.customer.update({
@@ -181,7 +180,6 @@ export class OrdersService {
                     })
                 ]);
             } else {
-                // Case user tamu (jarang terjadi kalau flow harus login dulu)
                 await prisma.order.update({
                     where: { id: orderId },
                     data: {
