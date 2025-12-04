@@ -28,7 +28,7 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
       {/* TEXTAREA */}
       <textarea
         className="border rounded-lg px-3 py-2 w-full resize-none focus:outline-none focus:ring focus:ring-gray-300"
-        rows={3}
+        rows={2}
         value={value}
         placeholder="contoh: suka pedas, suka bakso, suka minuman dingin…"
         onChange={(e) => onChange(e.target.value)}
