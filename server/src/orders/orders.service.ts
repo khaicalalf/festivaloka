@@ -72,7 +72,10 @@ export class OrdersService {
                 price: item.price,
                 quantity: item.qty,
                 name: item.name.substring(0, 50) // Midtrans max name length 50
-            }))
+            })),
+            callbacks: {
+                finish: `https://festivaloka.netlify.app/transaction/${order.id}`
+            }
         };
 
         const transaction = await this.core.createTransaction(parameter);
