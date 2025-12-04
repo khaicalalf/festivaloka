@@ -132,21 +132,27 @@ export class OrdersService {
                 orderBy: { createdAt: 'desc' }
             });
 
+            // B. Cek Jumlah Antrian Aktif (WAITING) saat ini
+            const currentWaiting = await prisma.queue.count({
+                where: {
+                    tenantId: order.tenantId,
+                    status: 'WAITING'
+                }
+            });
+
             let pointMultiplier = 1;
 
             if (lastQueue) {
-                // Hitung selisih waktu (Menit)
                 const now = new Date();
                 const diffMinutes = (now.getTime() - lastQueue.createdAt.getTime()) / 60000;
 
-                // Jika sudah sepi >= 45 menit, kasih 2x Poin
-                if (diffMinutes >= 45) {
-                    console.log(`💎 DOUBLE POINT APPLIED for Order ${orderId}! (Sepi ${Math.round(diffMinutes)} menit)`);
+                // Syarat: Sepi > 45 menit DAN Antrian Kosong (0)
+                if (diffMinutes >= 45 && currentWaiting === 0) {
+                    console.log(`💎 DOUBLE POINT APPLIED! (Sepi ${Math.round(diffMinutes)} menit & Antrian 0)`);
                     pointMultiplier = 2;
                 }
             } else {
-                // Jika toko belum pernah ada order sama sekali, kasih bonus
-                console.log(`💎 DOUBLE POINT APPLIED (First Customer)!`);
+                // Toko baru buka/belum pernah laku -> Double Poin
                 pointMultiplier = 2;
             }
 

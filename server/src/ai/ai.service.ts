@@ -117,7 +117,7 @@ export class AiService {
             // Kita cari order terakhir (status apa saja, yang penting ada aktivitas)
             const lastActivity = t.queues[0]; // Karena sudah di sort desc di query
             let isDoublePoint = false;
-            let minutesSinceLastOrder = 999; // Anggap lama banget kalau toko baru
+            let minutesSinceLastOrder = 999;
 
             if (lastActivity) {
                 const now = new Date();
@@ -125,8 +125,13 @@ export class AiService {
                 minutesSinceLastOrder = Math.round(diffMs / 60000);
             }
 
-            // Jika toko baru (gapunya history) ATAU sudah sepi > 45 menit -> AKTIFKAN PROMO
-            if (!lastActivity || minutesSinceLastOrder >= IDLE_THRESHOLD_MINUTES) {
+            // SYARAT BARU:
+            // 1. Toko Baru (gapunya history) -> OK
+            // 2. ATAU (Sepi > 45 Menit DAN Antrian Kosong) -> OK
+            const isIdleTime = minutesSinceLastOrder >= IDLE_THRESHOLD_MINUTES;
+            const isQueueEmpty = waitingCount === 0; // 👈 Wajib Kosong!
+
+            if (!lastActivity || (isIdleTime && isQueueEmpty)) {
                 isDoublePoint = true;
             }
 
