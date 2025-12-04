@@ -7,7 +7,7 @@ import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) { }
 
-  @Get(':id')
+  @Get('result/:id')
   @ApiOperation({ summary: 'Cek Status Order & Lihat Nomor Antrian untuk User (Order-xxx)' })
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);

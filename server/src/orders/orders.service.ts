@@ -169,12 +169,16 @@ export class OrdersService {
             where: { id: id },
             include: {
                 tenant: true,
-                customer: true
+                customer: true,
+                queue: true
             }
         });
 
         if (!order) throw new NotFoundException(`Order ${id} tidak ditemukan`);
 
-        return order;
+        return {
+            ...order,
+            queueStatus: order.queue?.status || 'NOT_IN_QUEUE'
+        };
     }
 }
