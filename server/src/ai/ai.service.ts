@@ -86,7 +86,7 @@ export class AiService {
         // 1. AMBIL DATA DARI DATABASE (Tenant + Menu + Queue History)
         const tenants = await this.prisma.tenant.findMany({
             include: {
-                menus: { select: { name: true, price: true } },
+                menus: { select: { id: true, name: true, price: true } },
                 queues: {
                     take: 50, // Ambil sampel 50 antrian terakhir
                     orderBy: { createdAt: 'desc' }, // Urutkan dari yang paling baru dibuat
