@@ -43,7 +43,7 @@ export function OrderForm({
             <div>
               <p className="font-medium">{item.name}</p>
               <p className="text-xs text-gray-500">
-                {item.description.toUpperCase()} • Rp
+                {item.description} • Rp
                 {item.price.toLocaleString()}
               </p>
             </div>
@@ -78,7 +78,7 @@ export function OrderForm({
             onChange={(e) =>
               onChangeContact({ ...contact, email: e.target.value })
             }
-            placeholder="opsional, untuk kirim struk"
+            placeholder="wajib, buat info antrian"
           />
         </div>
         <div>
@@ -90,7 +90,7 @@ export function OrderForm({
             onChange={(e) =>
               onChangeContact({ ...contact, phone: e.target.value })
             }
-            placeholder="wajib, buat info antrian"
+            placeholder="opsional"
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export function OrderForm({
         </p>
         <button
           type="button"
-          disabled={!cart.length || !contact.phone}
+          disabled={!cart.length || !contact.email}
           onClick={onCheckoutClick}
           className="bg-black text-white text-sm px-4 py-2 rounded disabled:bg-gray-400"
         >
