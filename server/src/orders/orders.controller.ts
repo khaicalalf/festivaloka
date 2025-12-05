@@ -1,6 +1,6 @@
-import { Controller, Post, Body, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, NotFoundException, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Orders (Transaksi & Pembayaran)')
 @Controller('orders')
@@ -11,6 +11,15 @@ export class OrdersController {
   @ApiOperation({ summary: 'Cek Status Order & Lihat Nomor Antrian untuk User (Order-xxx)' })
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
+  }
+
+  @Get('history')
+  @ApiOperation({ summary: 'Cek Riwayat Order via Email' })
+  @ApiQuery({ name: 'email', required: true, example: 'taichan@fest.com' }) // Dokumentasi Swagger
+  async getHistory(@Query('email') email: string) {
+    if (!email) throw new NotFoundException("Email wajib diisi!");
+
+    return this.ordersService.getHistoryByEmail(email);
   }
 
   @Post('checkout')

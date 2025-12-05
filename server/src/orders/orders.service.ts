@@ -216,4 +216,39 @@ export class OrdersService {
             queueStatus: order.queue?.status || 'NOT_IN_QUEUE'
         };
     }
+
+    async getHistoryByEmail(email: string) {
+        // 1. Cari dulu Customernya ada gak?
+        const customer = await prisma.customer.findUnique({
+            where: { email: email }
+        });
+
+        if (!customer) {
+            // Kita return array kosong aja biar gak error di frontend
+            return [];
+        }
+
+        // 2. Ambil semua order milik customer ini
+        const orders = await prisma.order.findMany({
+            where: { customerId: customer.id },
+            orderBy: { createdAt: 'desc' }, // Order terbaru paling atas
+            include: {
+                tenant: {
+                    select: {
+                        name: true,
+                        imageUrl: true, // Biar cakep ada foto tokonya
+                        address: true
+                    }
+                },
+                queue: {
+                    select: {
+                        number: true,
+                        status: true // PENTING: User butuh tau status (WAITING/DONE)
+                    }
+                }
+            }
+        });
+
+        return orders;
+    }
 }
