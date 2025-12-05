@@ -3,10 +3,15 @@ import { TenantCard } from "./TenantCard";
 
 type Props = {
   tenants: Tenant[];
+  selectedTenantId?: number | string | null;
   onSelectTenant: (tenant: Tenant) => void;
 };
 
-export function TenantList({ tenants, onSelectTenant }: Props) {
+export function TenantList({
+  tenants,
+  selectedTenantId,
+  onSelectTenant,
+}: Props) {
   if (!tenants.length) {
     return <p className="text-sm text-gray-500">Belum ada tenant terdaftar.</p>;
   }
@@ -18,6 +23,7 @@ export function TenantList({ tenants, onSelectTenant }: Props) {
           key={tenant.id}
           tenant={tenant}
           onClick={() => onSelectTenant(tenant)}
+          selected={tenant.id === selectedTenantId}
         />
       ))}
     </div>
