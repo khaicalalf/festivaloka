@@ -20,7 +20,7 @@ export type Tenant = {
 
 export type MenuItem = {
   id: string;
-  tenantId: number;
+  tenantId: string;
   name: string;
   price: number;
   description: string;
@@ -41,4 +41,36 @@ export type TransactionDetail = {
   totalAmount: number;
   tenantName: string;
   createdAt: string;
+};
+
+// Admin/auth types
+export type AdminProfile = {
+  id: number;
+  email: string;
+  role: string;
+  tenantId?: string;
+};
+
+export type AuthSession = AdminProfile & {
+  access_token: string;
+};
+
+// API response types
+export type LoginResponse = {
+  access_token: string;
+  user: AdminProfile;
+};
+
+// Transaction API types
+export type CreateTransactionPayload = {
+  tenantId: string;
+  items: { menuItemId: string; quantity: number }[];
+  email?: string;
+  phone?: string;
+  preferences: FoodPreference;
+};
+
+export type CreateTransactionResponse = {
+  uuid: string;
+  redirectUrl: string; // ke Midtrans
 };

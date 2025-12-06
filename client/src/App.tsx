@@ -3,19 +3,33 @@ import { HomePage } from "./pages/HomePage";
 import { TransactionResultPage } from "./pages/TransactionResultPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminRegister from "./pages/admin/AdminRegister";
 import { useAuth } from "./hooks/useAuth";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function AdminAuthRoute({ children }: { children: React.ReactNode }) {
   const { admin, loading } = useAuth();
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
   }
 
   return admin ? <>{children}</> : <Navigate to="/admin/login" replace />;
 }
 
 export function App() {
+  const { admin, loading } = useAuth();
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
+
   return (
     <BrowserRouter>
       <Routes>
@@ -24,18 +38,35 @@ export function App() {
         <Route path="/transaction/:uuid" element={<TransactionResultPage />} />
 
         {/* Admin routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/login"
+          element={
+            admin ? <Navigate to="/admin/dashboard" replace /> : <AdminLogin />
+          }
+        />
+        <Route
+          path="/admin/register"
+          element={
+            admin ? (
+              <Navigate to="/admin/dashboard" replace />
+            ) : (
+              <AdminRegister />
+            )
+          }
+        />
+
         <Route
           path="/admin/dashboard"
           element={
-            <ProtectedRoute>
+            <AdminAuthRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminAuthRoute>
           }
         />
-        
+
         {/* Redirect /admin to /admin/login */}
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+        <Route path="*" element={<h1>404 | Halaman Tidak Ditemukan</h1>} />
       </Routes>
     </BrowserRouter>
   );
