@@ -1,159 +1,157 @@
-import { useEffect, useState } from "react";
-import { usePreferences } from "../hooks/usePrefrerences";
+import { useState, useEffect } from "react";
+import { useTenants } from "../hooks/useTenants";
+//import { useTenantMenu } from "../hooks/useTenantMenu";
+import { useCart } from "../hooks/useCart";
+import { useVoiceOrder } from "../hooks/useVoiceOrder";
+import type { Tenant } from "../types";
 import { PreferenceForm } from "../components/preferences/PreferenceForm";
-import TenantSearch from "../components/tenants/TenantSearch";
+import { PreferenceSummary } from "../components/preferences/PreferenceSummary";
+import { TenantList } from "../components/tenants/TenantList";
 import { OrderForm } from "../components/order/OrderForm";
 import { CheckoutModal } from "../components/order/CheckoutModal";
-import type { CartItem, MenuItem, Tenant } from "../types";
-import { fetchTenants, fetchTenantMenu } from "../api/tenants";
-import { createTransaction, mapCartToPayloadItems } from "../api/transactions";
-import { PreferenceSummary } from "../components/preferences/PreferenceSummary";
-//import { useNavigate } from "react-router-dom";
+import { checkoutOrder } from "../api/tenants";
+import { mapCartToPayloadItems } from "../api/transactions";
+import { OrderHistorySection } from "../components/history/OrderHistorySection";
+import { VoiceAIBar } from "../components/order/VoiceAIBar";
+import { Link } from "react-router-dom";
 
 export function HomePage() {
-  const { preferences, setPreferences } = usePreferences();
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [loadingTenants, setLoadingTenants] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-  const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [loadingMenu, setLoadingMenu] = useState(false);
-
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [contact, setContact] = useState({ email: "", phone: "" });
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [editingPref, setEditingPref] = useState(() => {
-    // jika preferences dari localStorage masih default → auto edit mode
-    return false;
+  const [preferences, setPreferences] = useState(
+    localStorage.getItem("preferences") ?? ""
+  );
+  const [prefOpen, setPrefOpen] = useState(preferences === "");
+  const [contact, setContact] = useState(() => {
+    const saved = localStorage.getItem("contact");
+    return saved ? JSON.parse(saved) : { email: "", phone: "" };
   });
 
-  // quick check untuk tau apakah user sudah pernah isi preferensi
-  const isDefault =
-    preferences.notes === "" &&
-    preferences.spicyLevel === "medium" &&
-    preferences.halalOnly === true;
+  const { tenants, loadingTenants } = useTenants(preferences);
+  const { cart, setCart, changeQty } = useCart();
 
-  //const navigate = useNavigate();
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoadingTenants(true);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-      const tenantsPromise = fetchTenants();
-      // misal kamu mau prefetch default tenant dulu
+  const isTenantSelected = selectedTenant !== null;
 
-      const [tenants] = await Promise.all([tenantsPromise]);
+  //const [isCollapsed, setIsCollapsed] = useState(true);
+  const [editingPref, setEditingPref] = useState(false);
+  const [toast, setToast] = useState<string>("");
 
-      setTenants(tenants);
+  const { startVoiceInput, stopVoiceInput, isListening } = useVoiceOrder({
+    tenants,
+    setSelectedTenant,
+    setCart,
+    setCheckoutOpen,
+    onVoiceStopped: () => {
+      setToast("🎧 Memproses pesanan AI...");
+    },
+  });
 
-      setLoadingTenants(false);
-    };
-
-    load();
-  }, []);
-
-  const handleSelectTenant = async (tenant: Tenant) => {
+  const handleSelectTenant = (tenant: Tenant) => {
     setSelectedTenant(tenant);
-    setCart([]); // reset pesanan jika ganti tenant
-    setLoadingMenu(true);
-    try {
-      const data = await fetchTenantMenu(tenant.id);
-      setSelectedTenant(data);
-      setMenu(data.menus);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingMenu(false);
-    }
+    setCart([]); // reset cart
   };
 
-  const handleChangeQuantity = (menuItem: MenuItem, quantity: number) => {
-    setCart((prev) => {
-      // hapus jika quantity 0
-      if (quantity === 0) {
-        return prev.filter((c) => c.menuItem.id !== menuItem.id);
-      }
-      const existing = prev.find((c) => c.menuItem.id === menuItem.id);
-      if (!existing) {
-        return [...prev, { menuItem, quantity }];
-      }
-      return prev.map((c) =>
-        c.menuItem.id === menuItem.id ? { ...c, quantity } : c
-      );
-    });
-  };
-
-  const handleCheckoutConfirm = async () => {
+  const handleCheckout = async () => {
     if (!selectedTenant) return;
     setCheckoutLoading(true);
-    try {
-      const payload = {
-        tenantId: selectedTenant.id,
-        items: mapCartToPayloadItems(cart),
-        email: contact.email || undefined,
-        phone: contact.phone,
-        preferences,
-      };
 
-      const res = await createTransaction(payload);
+    const payload = {
+      email: contact.email,
+      phone: contact.phone,
+      tenantId: Number(selectedTenant.id),
+      totalAmount: cart.reduce((s, c) => s + c.menuItem.price * c.quantity, 0),
+      items: mapCartToPayloadItems(cart),
+    };
 
-      // optional: simpan uuid terakhir kalau mau
-      // window.localStorage.setItem("last-transaction-uuid", res.uuid);
-
-      // langsung lempar ke Midtrans
-      window.location.href = res.redirectUrl;
-    } catch (e) {
-      console.error(e);
-      setCheckoutLoading(false);
-      // di real app, tampilkan toast error
-    }
+    const res = await checkoutOrder(payload);
+    window.location.href = `https://app.sandbox.midtrans.com/snap/v4/redirection/${res.snapToken}`;
   };
 
+  useEffect(() => {
+    localStorage.setItem("contact", JSON.stringify(contact));
+  }, [contact]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
-      <h1 className="text-2xl font-bold mb-2">Food Court Digital</h1>
-      <section className="mb-4">
-        {editingPref || isDefault ? (
+    <div className="max-w-4xl mx-auto p-4 space-y-4">
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-bold">Food Court Digital</h1>
+        <Link
+          to="/denah"
+          className="block text-center bg-black text-white py-4 px-4 rounded-xl shadow-md hover:bg-neutral-900 transition-all duration-200 animate-slide-up"
+        >
+          Denah Tenant
+        </Link>
+      </div>
+
+      <section>
+        {prefOpen && editingPref ? (
           <PreferenceForm
-            value={preferences}
+            value={preferences ?? ""}
             onChange={setPreferences}
             onSubmit={() => {
+              localStorage.setItem("preferences", preferences);
               setEditingPref(false);
+              //setIsCollapsed(true);
+            }}
+            onClose={() => {
+              setEditingPref(false);
+              setPrefOpen(false);
+              //setIsCollapsed(true);
             }}
           />
         ) : (
           <PreferenceSummary
-            pref={preferences}
-            onEdit={() => setEditingPref(true)}
+            pref={preferences ?? ""}
+            onEdit={() => {
+              setEditingPref(true);
+              setPrefOpen(true);
+              //setIsCollapsed(false);
+            }}
           />
         )}
       </section>
+      <OrderHistorySection />
 
-      <section className="space-y-2">
-        <h2 className="font-semibold text-lg">Pilih Tenant</h2>
-        {loadingTenants ? (
-          <div className="animate-pulse bg-gray-200 h-24 rounded-md"></div>
-        ) : (
-          <TenantSearch tenants={tenants} onSelectTenant={handleSelectTenant} />
-        )}
-      </section>
+      {/* Voice AI Section — moves based on context */}
+      <div className={`${isTenantSelected ? "mt-2" : ""}`}>
+        <VoiceAIBar
+          isListening={isListening}
+          onStart={startVoiceInput}
+          onStop={stopVoiceInput}
+          stickBottom={!isTenantSelected}
+        />
+      </div>
+
+      {loadingTenants ? (
+        <div className="animate-pulse h-24 mb-20 bg-gray-200 rounded"></div>
+      ) : (
+        <TenantList
+          tenants={tenants}
+          selectedTenantId={selectedTenant?.id}
+          onSelectTenant={handleSelectTenant}
+        />
+      )}
 
       {selectedTenant && (
-        <section>
-          {loadingMenu ? (
-            <div className="animate-pulse bg-gray-200 h-24 rounded-md"></div>
-          ) : (
-            <OrderForm
-              tenantName={selectedTenant.name}
-              menu={menu}
-              cart={cart}
-              onChangeQuantity={handleChangeQuantity}
-              contact={contact}
-              onChangeContact={setContact}
-              onCheckoutClick={() => setCheckoutOpen(true)}
-            />
-          )}
-        </section>
+        <OrderForm
+          tenantName={selectedTenant.name}
+          menu={selectedTenant.menus}
+          cart={cart}
+          onChangeQuantity={changeQty}
+          contact={contact}
+          onChangeContact={setContact}
+          onCheckoutClick={() => setCheckoutOpen(true)}
+          onCancel={() => setSelectedTenant(null)}
+        />
       )}
 
       <CheckoutModal
@@ -162,9 +160,22 @@ export function HomePage() {
         cart={cart}
         preferences={preferences}
         contact={contact}
-        onConfirm={handleCheckoutConfirm}
+        onContactChange={setContact}
+        onConfirm={handleCheckout}
         loading={checkoutLoading}
       />
+
+      {toast && (
+        <div
+          className="
+    fixed bottom-6 left-1/2 -translate-x-1/2
+    bg-black text-white text-sm px-4 py-2 rounded-lg shadow-lg
+    animate-fade-in
+  "
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

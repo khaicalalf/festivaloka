@@ -19,6 +19,7 @@ function AdminAuthRoute({ children }: { children: React.ReactNode }) {
 
   return admin ? <>{children}</> : <Navigate to="/admin/login" replace />;
 }
+import { DenahPage } from "./pages/DenahPage";
 
 export function App() {
   const { admin, loading } = useAuth();
@@ -67,6 +68,8 @@ export function App() {
         {/* Redirect /admin to /admin/login */}
         <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
         <Route path="*" element={<h1>404 | Halaman Tidak Ditemukan</h1>} />
+        <Route path="/denah" element={<DenahPage />} />
+        <Route path="/transaction/:id" element={<TransactionResultPage />} />
       </Routes>
     </BrowserRouter>
   );

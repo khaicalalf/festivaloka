@@ -1,32 +1,26 @@
-import type { FoodPreference } from "../../types";
-
 type Props = {
-  pref: FoodPreference;
+  pref: string; // preferensi bebas
   onEdit: () => void;
 };
 
 export function PreferenceSummary({ pref, onEdit }: Props) {
+  const isEmpty = !pref || pref.trim() === "";
+
   return (
-    <div className="border rounded-lg p-4 mb-4 bg-white shadow">
+    <div className="border rounded-xl p-4 mb-4 bg-white shadow-sm backdrop-blur">
       <h2 className="font-semibold text-lg mb-2">Preferensi Kamu</h2>
 
-      <div className="text-sm space-y-1">
-        <p>
-          <b>Level pedas:</b> {pref.spicyLevel}
-        </p>
-        <p>
-          <b>Halal only:</b> {pref.halalOnly ? "Ya" : "Tidak"}
-        </p>
-        {pref.notes && (
-          <p>
-            <b>Catatan:</b> {pref.notes}
-          </p>
+      <div className="text-sm text-neutral-700">
+        {isEmpty ? (
+          <p className="italic opacity-70">Kamu belum mengisi preferensi.</p>
+        ) : (
+          <p className="whitespace-pre-line leading-relaxed">{pref}</p>
         )}
       </div>
 
       <button
         onClick={onEdit}
-        className="mt-3 text-sm bg-black text-white px-3 py-1 rounded"
+        className="mt-3 text-sm bg-black text-white px-3 py-1.5 rounded-lg shadow hover:bg-neutral-900 transition"
       >
         Edit Preferensi
       </button>

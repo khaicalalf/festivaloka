@@ -14,6 +14,7 @@ lerna-debug.log*
 
 # OS
 .DS_Store
+Thumbs.db
 
 # Tests
 /coverage
@@ -27,6 +28,9 @@ lerna-debug.log*
 *.launch
 .settings/
 *.sublime-workspace
+*.swp
+*.swo
+*~
 
 # IDE - VSCode
 .vscode/*
@@ -54,3 +58,28 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Prisma
+/generated/prisma
+prisma/migrations
+node_modules/.prisma
+
+# Uploads
+/uploads
+/public/uploads
+
+# Cache
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Lock files (uncomment if you want to ignore specific lock files)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
