@@ -350,8 +350,7 @@ Contributions, issues, dan feature requests sangat diterima!
 
 ## 🏆 Hackathon
 
-Proyek ini dikembangkan untuk **Hackathon IMPHNEN** dengan memanfaatkan teknologi **KOLOSAL AI** untuk memberikan rekomendasi cerdas kepada pengunjung festival berdasarkan preferensi mereka.
-
+Proyek ini dikembangkan untuk **Hackathon IMPHNEN** dengan memanfaatkan teknologi **KOLOSAL AI** yang berjudul **MENDORONG USAHA LOKAL DENGAN AI INKLUSIF**
 ### Implementasi KOLOSAL AI
 Fitur AI digunakan untuk:
 - Menganalisis preferensi pengunjung
