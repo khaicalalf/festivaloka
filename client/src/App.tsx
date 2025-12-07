@@ -1,35 +1,76 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HomePage } from "./pages/HomePage";
+import { TransactionResultPage } from "./pages/TransactionResultPage";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminRegister from "./pages/admin/AdminRegister";
+import { useAuth } from "./hooks/useAuth";
 
-function App() {
-  const [count, setCount] = useState(0)
+function AdminAuthRoute({ children }: { children: React.ReactNode }) {
+  const { admin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  return admin ? <>{children}</> : <Navigate to="/admin/login" replace />;
+}
+import { DenahPage } from "./pages/DenahPage";
+
+export function App() {
+  const { admin, loading } = useAuth();
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/transaction/:uuid" element={<TransactionResultPage />} />
 
-export default App
+        {/* Admin routes */}
+        <Route
+          path="/admin/login"
+          element={
+            admin ? <Navigate to="/admin/dashboard" replace /> : <AdminLogin />
+          }
+        />
+        <Route
+          path="/admin/register"
+          element={
+            admin ? (
+              <Navigate to="/admin/dashboard" replace />
+            ) : (
+              <AdminRegister />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminAuthRoute>
+              <AdminDashboard />
+            </AdminAuthRoute>
+          }
+        />
+
+        {/* Redirect /admin to /admin/login */}
+        <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+        <Route path="*" element={<h1>404 | Halaman Tidak Ditemukan</h1>} />
+        <Route path="/denah" element={<DenahPage />} />
+        <Route path="/transaction/:id" element={<TransactionResultPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
