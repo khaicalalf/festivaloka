@@ -25,7 +25,7 @@ export function VoiceAIBar({
           ${isListening ? "bg-red-600 animate-pulse" : "bg-black"}
         `}
       >
-        {isListening ? "⏹ Stop Mendengarkan" : "🎤 Bicara ke AI"}
+        {isListening ? "⏹ Stop Mendengarkan" : "🎤 Sampaikan Pesananmu"}
       </button>
 
       {isListening && (
