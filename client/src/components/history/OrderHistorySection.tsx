@@ -33,9 +33,9 @@ export function OrderHistorySection() {
 
   const showHistory = expanded
     ? history
-    : called.length > 0
-    ? latestCalled
-    : latestTwoWaiting;
+    : latestTwoWaiting.length > 0
+    ? latestTwoWaiting
+    : latestCalled;
 
   /* ==========================
         SIMPAN EMAIL BARU
