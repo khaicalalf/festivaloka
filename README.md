@@ -13,8 +13,7 @@ FestivaLoka adalah aplikasi web fullstack yang dikembangkan untuk **Hackathon IM
 Platform ini memungkinkan:
 
 - **Pengunjung**: Memesan makanan/minuman, melihat denah festival, mendapat rekomendasi AI, dan mengumpulkan poin loyalitas
-- **Tenant**: Mengelola menu, memantau pesanan, dan update status pesanan
-- **Admin**: Mengelola tenant, memonitor transaksi, dan menganalisis performa festival
+- **Tenant**: Mengelola menu, memantau pesanan, mengelola tenant, memonitor transaksi, dan update status pesanan
 
 ## 🛠️ Tech Stack
 
