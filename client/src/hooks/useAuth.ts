@@ -36,6 +36,7 @@ export function useAuth() {
   const logout = () => {
     setAdmin(null);
     localStorage.removeItem("admin_auth");
+    window.location.href = "/admin/login";
   };
 
   return { admin, loading, login, logout };

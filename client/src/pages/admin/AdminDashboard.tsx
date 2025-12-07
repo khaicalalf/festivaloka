@@ -112,7 +112,7 @@ const MenuModal = ({
 // --- KOMPONEN UTAMA: AdminDashboard ---
 // ====================================================================
 export default function AdminDashboard() {
-  const { admin, logout } = useAuth();
+  const { admin } = useAuth();
   const navigate = useNavigate();
 
   // Ambil tenantId & Role
@@ -139,8 +139,8 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string>("");
 
   const handleLogout = () => {
-    logout();
-    navigate("/admin/login");
+    localStorage.removeItem("user"); // hapus sesi
+    navigate("/admin/login", { replace: true }); // redirect
   };
 
   // Prepare auth headers

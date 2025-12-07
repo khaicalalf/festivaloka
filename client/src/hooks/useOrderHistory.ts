@@ -8,6 +8,7 @@ export interface OrderHistoryItemType {
   queueNumber: string;
   items: { qty: number; name: string; price: number }[];
   createdAt: string;
+  pointsEarned: number;
   tenant: {
     name: string;
     imageUrl?: string;
