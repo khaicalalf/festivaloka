@@ -84,13 +84,16 @@ export type AdminProfile = {
 };
 
 export type AuthSession = AdminProfile & {
-  access_token: string;
+  // access_token: string;
 };
 
 // API response types
 export type LoginResponse = {
   access_token: string;
-  user: AdminProfile;
+  id: number;
+  email: string;
+  role: string;
+  tenantId?: string;
 };
 
 // Transaction API types

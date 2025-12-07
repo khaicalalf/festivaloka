@@ -80,17 +80,16 @@ export default function AdminRegister() {
     try {
       const data = await registerAdmin(payload);
 
-      const session: AuthSession = {
-        id: data.user.id,
-        email: data.user.email,
-        role: data.user.role,
-        tenantId: data.user.tenantId,
-        access_token: data.access_token,
-      };
-
-      if (!session.access_token) {
-        throw new Error("Token tidak ditemukan pada respons register");
+      if (!data) {
+        console.log(data);
       }
+
+      const session: any = {
+        id: data.id,
+        email: data.email,
+        role: data.role,
+        tenantId: data.tenantId,
+      };
 
       login(session);
       navigate("/admin/dashboard");
