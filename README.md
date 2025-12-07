@@ -124,46 +124,61 @@ Frontend akan berjalan di `http://localhost:5173`
 
 ## 📡 API Endpoints
 
-Base URL: `http://localhost:3000/api`
+Base URL: `http://localhost:3000/api`  
+**Live API**: `https://festivaloka-dev.up.railway.app/api`  
+**Swagger Documentation**: [https://festivaloka-dev.up.railway.app/docs](https://festivaloka-dev.up.railway.app/docs)
 
-### Authentication
+### App (Default)
 ```
-POST   /api/auth/register    - Register user baru
-POST   /api/auth/login       - Login
-GET    /api/auth/profile     - Get user profile (protected)
+GET    /api                  - Health check / API info
 ```
 
-### Tenants
+### Authentication (UserTenant)
 ```
+POST   /api/auth/register    - Register user baru (tenant admin)
+POST   /api/auth/login       - Login untuk tenant admin
+```
+
+### Tenants (Management)
+```
+POST   /api/tenants          - Create tenant baru (admin only)
 GET    /api/tenants          - Get semua tenant
 GET    /api/tenants/:id      - Get detail tenant
-POST   /api/tenants          - Create tenant (admin only)
 PATCH  /api/tenants/:id      - Update tenant
 DELETE /api/tenants/:id      - Delete tenant (admin only)
 ```
 
-### Orders
+### Tenant Menus (Management Menu per Tenant)
 ```
-GET    /api/orders           - Get semua orders
-GET    /api/orders/:id       - Get detail order
-POST   /api/orders           - Create order baru
-PATCH  /api/orders/:id       - Update status order
-```
-
-### Queues
-```
-GET    /api/queues           - Get semua antrian
-GET    /api/queues/tenant/:tenantId  - Get antrian per tenant
-POST   /api/queues           - Create antrian baru
-PATCH  /api/queues/:id       - Update status antrian
+POST   /api/tenants/:tenantId/menus        - Create menu baru untuk tenant
+GET    /api/tenants/:tenantId/menus        - Get semua menu dari tenant
+PATCH  /api/tenants/:tenantId/menus/:menuId - Update menu
+DELETE /api/tenants/:tenantId/menus/:menuId - Delete menu
 ```
 
-### AI
+### Orders (Pesanan & Pembayaran)
 ```
-POST   /api/ai/recommend     - Get rekomendasi tenant berdasarkan preferensi
+POST   /api/orders           - Create order baru (dengan Midtrans payment)
+POST   /api/orders/voice     - Create order via voice input
+POST   /api/orders/webhook   - Midtrans payment webhook
+GET    /api/orders/tenant/:tenantId - Get orders per tenant
+GET    /api/orders/:id/status       - Get status order
 ```
 
-Dokumentasi lengkap API tersedia di Swagger UI: `http://localhost:3000/docs`
+### Queues (Sistem Antrian)
+```
+GET    /api/queues/dashboard/:tenantId - Get dashboard antrian untuk tenant
+PATCH  /api/queues/:id/status          - Update status antrian
+```
+
+### AI (KOLOSAL AI - Rekomendasi)
+```
+POST   /api/ai/recommend     - Get rekomendasi tenant berdasarkan preferensi pengunjung
+```
+
+> **📖 Dokumentasi Lengkap**  
+> Untuk detail request/response body, schema, dan testing langsung, kunjungi [Swagger UI](https://festivaloka-dev.up.railway.app/docs)
+
 
 ## 📝 Scripts
 
@@ -284,9 +299,23 @@ Fitur AI digunakan untuk:
 
 UNLICENSED - Private Project
 
-## 👥 Author
+## 👥 Team
 
-**Fadli Aditama**
+### **Team Karasuno** 🏐
+> 飛べ | fly .
+
+**Kota Palembang**
+
+#### Team Leader
+- **Muhammad Ghufron Khaical Alfaris**  
+  📧 mghaiksal@gmail.com
+
+#### Members
+- **Acmad Fadli Aditama** - Developer
+- **Bayfore** (bayfore@gmail.com) - Developer
+- **Meadraizhen** (meadraizhen@gmail.com) - Developer
+- **Ahmad Riyadh** - Developer
+- **Muhammad Ghufron Khaical Alfaris** - Team Leader
 
 ---
 
