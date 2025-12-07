@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import type { AuthSession, Tenant } from "../../types";
@@ -20,21 +20,20 @@ export default function AdminRegister() {
   const { login } = useAuth();
 
   useEffect(() => {
-    // Load tenants once; used if role is "karyawan"
-    const load = async () => {
+    if (role === "karyawan") {
       setTenantsLoading(true);
-      try {
-        const data = await fetchTenants();
-        setTenants(data);
-      } catch (e) {
-        // Optional: show a non-blocking error; keep empty list if failed
-        console.error("Gagal memuat tenants", e);
-      } finally {
-        setTenantsLoading(false);
-      }
-    };
-    load();
-  }, []);
+      fetchTenants()
+        .then((data) => {
+          setTenants(data);
+        })
+        .catch((e) => {
+          console.error("Gagal memuat tenants", e);
+        })
+        .finally(() => {
+          setTenantsLoading(false);
+        });
+    }
+  }, [role]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +54,7 @@ export default function AdminRegister() {
 
     let tenantIdPayload: number | null = null;
     if (role === "TENANT_ADMIN") {
-      tenantIdPayload = null; // rule: TENANT_ADMIN harus null
+      tenantIdPayload = null;
     } else {
       if (!tenantId) {
         setError("Silakan pilih tenant untuk role karyawan");

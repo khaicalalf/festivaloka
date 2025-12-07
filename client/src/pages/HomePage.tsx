@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useTenants } from "../hooks/useTenants";
-//import { useTenantMenu } from "../hooks/useTenantMenu";
 import { useCart } from "../hooks/useCart";
 import { useVoiceOrder } from "../hooks/useVoiceOrder";
 import type { Tenant } from "../types";
