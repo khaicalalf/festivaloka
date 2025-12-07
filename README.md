@@ -267,16 +267,82 @@ npm run test:e2e
 npm run test:cov
 ```
 
-## 🚢 Deployment
+## � Dokumentasi
 
-### Backend
-1. Build aplikasi: `npm run build`
-2. Jalankan migrations: `npx prisma migrate deploy`
-3. Start server: `npm run start:prod`
+### 📸 Screenshots
 
-### Frontend
-1. Build aplikasi: `npm run build`
-2. Deploy folder `dist` ke hosting (Vercel, Netlify, dll)
+> **TODO**: Tambahkan screenshot aplikasi di sini
+
+#### Landing Page
+<!-- Tambahkan screenshot landing page -->
+![Landing Page](./docs/screenshots/landing-page.png)
+
+#### Dashboard Admin
+<!-- Tambahkan screenshot dashboard admin -->
+![Dashboard Admin](./docs/screenshots/admin-dashboard.png)
+
+#### Halaman Pemesanan
+<!-- Tambahkan screenshot halaman pemesanan -->
+![Halaman Pemesanan](./docs/screenshots/order-page.png)
+
+#### Sistem Antrian
+<!-- Tambahkan screenshot sistem antrian -->
+![Sistem Antrian](./docs/screenshots/queue-system.png)
+
+### 🎥 Video Demo
+
+> **TODO**: Tambahkan link video demo aplikasi
+
+- **Demo Lengkap**: [Link Video Demo](https://example.com/video-demo)
+- **Tutorial Penggunaan**: [Link Tutorial](https://example.com/tutorial)
+- **Presentasi Pitch**: [Link Presentasi](https://example.com/pitch)
+
+### 📖 Panduan Penggunaan
+
+#### Untuk Pengunjung
+1. **Registrasi/Login** - [TODO: Tambahkan panduan]
+2. **Melihat Daftar Tenant** - [TODO: Tambahkan panduan]
+3. **Memesan Makanan/Minuman** - [TODO: Tambahkan panduan]
+4. **Melakukan Pembayaran** - [TODO: Tambahkan panduan]
+5. **Melihat Status Antrian** - [TODO: Tambahkan panduan]
+6. **Menggunakan Rekomendasi AI** - [TODO: Tambahkan panduan]
+
+#### Untuk Tenant Admin
+1. **Login ke Dashboard** - [TODO: Tambahkan panduan]
+2. **Mengelola Menu** - [TODO: Tambahkan panduan]
+3. **Menerima Pesanan** - [TODO: Tambahkan panduan]
+4. **Update Status Antrian** - [TODO: Tambahkan panduan]
+5. **Melihat Laporan** - [TODO: Tambahkan panduan]
+
+### 🔧 Troubleshooting
+
+#### Database Connection Error
+```
+TODO: Tambahkan solusi untuk masalah koneksi database
+```
+
+#### Midtrans Payment Failed
+```
+TODO: Tambahkan solusi untuk masalah pembayaran
+```
+
+#### AI Recommendation Not Working
+```
+TODO: Tambahkan solusi untuk masalah rekomendasi AI
+```
+
+### 📊 Arsitektur Sistem
+
+> **TODO**: Tambahkan diagram arsitektur sistem
+
+```
+TODO: Tambahkan penjelasan arsitektur
+- Frontend Architecture
+- Backend Architecture
+- Database Schema
+- AI Integration Flow
+- Payment Gateway Flow
+```
 
 ## 🤝 Kontribusi
 
