@@ -1,18 +1,10 @@
 import { apiClient } from "./client";
-import type { CartItem, FoodPreference, TransactionDetail } from "../types";
-
-type CreateTransactionPayload = {
-  tenantId: string;
-  items: { menuItemId: string; quantity: number }[];
-  email?: string;
-  phone?: string;
-  preferences: FoodPreference;
-};
-
-type CreateTransactionResponse = {
-  uuid: string;
-  redirectUrl: string; // ke Midtrans
-};
+import type {
+  CartItem,
+  TransactionDetail,
+  CreateTransactionPayload,
+  CreateTransactionResponse,
+} from "../types";
 
 export async function createTransaction(
   payload: CreateTransactionPayload

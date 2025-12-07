@@ -22,7 +22,7 @@ export type Tenant = {
 
 export type MenuItem = {
   id: string;
-  tenantId: number;
+  tenantId: string;
   name: string;
   price: number;
   description: string;
@@ -74,3 +74,55 @@ export type OrderResult = {
     phone: string;
   };
 };
+
+// Admin/auth types
+export type user = {
+  id: number;
+  email: string;
+  role: string;
+  tenantId?: string;
+};
+
+export type AuthSession = user & {
+  access_token: string;
+};
+
+// API response types
+export type LoginResponse = {
+  user: user;
+  access_token: string;
+  id: number;
+  email: string;
+  role: string;
+  tenantId?: string;
+};
+
+// Transaction API types
+export type CreateTransactionPayload = {
+  tenantId: string;
+  items: { menuItemId: string; quantity: number }[];
+  email?: string;
+  phone?: string;
+  preferences: FoodPreference;
+};
+
+export type CreateTransactionResponse = {
+  uuid: string;
+  redirectUrl: string; // ke Midtrans
+};
+
+export interface QueueItem {
+  id: number;
+  number: string;
+  status: "WAITING" | "CALLED";
+  orderId: string;
+  tenantId: number | string;
+  createdAt: string;
+
+  order: {
+    id: string;
+    items: { qty: number; name: string; price: number }[];
+    totalAmount: number;
+    customer: { email: string; phone: string };
+  };
+}
