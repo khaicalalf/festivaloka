@@ -16,6 +16,8 @@ export type Tenant = {
   isViral: boolean;
   status: TenantStatus;
   menus: MenuItem[]; // menus embedded for simplicity
+  address?: string;
+  imageUrl?: string;
 };
 
 export type MenuItem = {

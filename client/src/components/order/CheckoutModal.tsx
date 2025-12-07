@@ -40,8 +40,7 @@ export function CheckoutModal({
 
   const total = cart.reduce((sum, c) => sum + c.menuItem.price * c.quantity, 0);
 
-  const isContactValid =
-    contact.email.trim() !== "" && contact.phone.trim() !== "";
+  const isContactValid = contact.email.trim() !== "";
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     onContactChange({ ...contact, email: e.target.value });

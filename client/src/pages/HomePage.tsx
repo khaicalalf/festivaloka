@@ -11,11 +11,15 @@ import { OrderForm } from "../components/order/OrderForm";
 import { CheckoutModal } from "../components/order/CheckoutModal";
 import { checkoutOrder } from "../api/tenants";
 import { mapCartToPayloadItems } from "../api/transactions";
+import { OrderHistorySection } from "../components/history/OrderHistorySection";
+import { VoiceAIBar } from "../components/order/VoiceAIBar";
+import { Link } from "react-router-dom";
 
 export function HomePage() {
   const [preferences, setPreferences] = useState(
     localStorage.getItem("preferences") ?? ""
   );
+  const [prefOpen, setPrefOpen] = useState(preferences === "");
   const [contact, setContact] = useState(() => {
     const saved = localStorage.getItem("contact");
     return saved ? JSON.parse(saved) : { email: "", phone: "" };
@@ -29,7 +33,9 @@ export function HomePage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const isTenantSelected = selectedTenant !== null;
+
+  //const [isCollapsed, setIsCollapsed] = useState(true);
   const [editingPref, setEditingPref] = useState(false);
   const [toast, setToast] = useState<string>("");
 
@@ -76,22 +82,30 @@ export function HomePage() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Food Court Digital</h1>
+      <div className="flex justify-between">
+        <h1 className="text-2xl font-bold">Food Court Digital</h1>
+        <Link
+          to="/denah"
+          className="block text-center bg-black text-white py-4 px-4 rounded-xl shadow-md hover:bg-neutral-900 transition-all duration-200 animate-slide-up"
+        >
+          Denah Tenant
+        </Link>
+      </div>
 
-      {/* Preferensi */}
       <section>
-        {!isCollapsed || editingPref ? (
+        {prefOpen && editingPref ? (
           <PreferenceForm
             value={preferences ?? ""}
             onChange={setPreferences}
             onSubmit={() => {
               localStorage.setItem("preferences", preferences);
               setEditingPref(false);
-              setIsCollapsed(true);
+              //setIsCollapsed(true);
             }}
             onClose={() => {
               setEditingPref(false);
-              setIsCollapsed(true);
+              setPrefOpen(false);
+              //setIsCollapsed(true);
             }}
           />
         ) : (
@@ -99,33 +113,23 @@ export function HomePage() {
             pref={preferences ?? ""}
             onEdit={() => {
               setEditingPref(true);
-              setIsCollapsed(false);
+              setPrefOpen(true);
+              //setIsCollapsed(false);
             }}
           />
         )}
       </section>
+      <OrderHistorySection />
 
-      {isListening ? (
-        <button
-          onClick={stopVoiceInput}
-          className="px-4 py-2 bg-red-600 text-white rounded animate-pulse"
-        >
-          ⏹ Stop Mendengarkan
-        </button>
-      ) : (
-        <button
-          onClick={startVoiceInput}
-          className="px-4 py-2 bg-black text-white rounded"
-        >
-          🎤 Bicara ke AI
-        </button>
-      )}
-
-      {isListening && (
-        <p className="text-xs text-red-500 mt-1 animate-pulse">
-          Sedang mendengarkan…
-        </p>
-      )}
+      {/* Voice AI Section — moves based on context */}
+      <div className={`${isTenantSelected ? "mt-2" : ""}`}>
+        <VoiceAIBar
+          isListening={isListening}
+          onStart={startVoiceInput}
+          onStop={stopVoiceInput}
+          stickBottom={!isTenantSelected}
+        />
+      </div>
 
       {loadingTenants ? (
         <div className="animate-pulse h-24 bg-gray-200 rounded"></div>
@@ -146,6 +150,7 @@ export function HomePage() {
           contact={contact}
           onChangeContact={setContact}
           onCheckoutClick={() => setCheckoutOpen(true)}
+          onCancel={() => setSelectedTenant(null)}
         />
       )}
 

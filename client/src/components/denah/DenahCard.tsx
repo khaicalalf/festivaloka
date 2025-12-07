@@ -2,11 +2,11 @@ import type { Tenant } from "../../types";
 
 type Props = {
   tenant: Tenant;
-  selected?: boolean;
-  onClick: () => void;
 };
 
-export function TenantCard({ tenant, selected, onClick }: Props) {
+export function DenahCard({ tenant }: Props) {
+  const standCode = tenant.address?.match(/[A-Z]-\d+/)?.[0] ?? "???";
+
   // badge logic
   let badgeText = "";
   let badgeColor = "";
@@ -26,36 +26,43 @@ export function TenantCard({ tenant, selected, onClick }: Props) {
   }
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className={`relative border rounded-lg p-3 text-left w-full flex gap-3 transition
-        ${selected ? "bg-black text-white" : ""}
       `}
     >
       {/* BADGE */}
       <div
-        className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-medium ${badgeColor}`}
+        className={`absolute top-2 left-2 hidden md:block text-[14px] px-2 py-1 mt-4 rounded-full font-medium ${badgeColor}`}
       >
         {badgeText}
       </div>
+      <div
+        className={`absolute top-2 right-2 text-[32px] px-2 py-0.5 rounded-full font-medium`}
+      >
+        {standCode}
+      </div>
 
       <div className="mt-4">
+        <img
+          src={tenant.imageUrl}
+          alt={tenant.name}
+          className="h-20 w-1/2 my-4 object-cover rounded-lg"
+        />
         <h3 className="font-semibold">{tenant.name}</h3>
 
-        <p className={`text-xs ${selected ? "text-white" : "text-gray-600"}`}>
-          {tenant.category}
-        </p>
+        <p className="text-xs text-gray-600">{tenant.category}</p>
 
         {tenant.description && (
-          <p
-            className={`text-xs mt-1 line-clamp-2 ${
-              selected ? "text-white" : "text-gray-500"
-            }`}
-          >
+          <p className="text-xs mt-1 mb-2 line-clamp-2 text-gray-500">
             {tenant.description}
           </p>
         )}
+        <span
+          className={` md:hidden text-[11px] px-2 py-1 mt-4 rounded-full font-medium ${badgeColor}`}
+        >
+          {badgeText}
+        </span>
       </div>
-    </button>
+    </div>
   );
 }
