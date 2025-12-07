@@ -12,6 +12,41 @@ export async function getTenantsByAI(ref: string | null): Promise<Tenant[]> {
   });
 }
 
+export async function postTenant(payload: {
+  name: string;
+  category: string;
+  description: string;
+  address: string;
+  imageUrl?: string;
+}): Promise<{
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  address: string;
+  imageUrl?: string;
+  isViral: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}> {
+  // Ambil token dari localStorage
+  const raw = localStorage.getItem("admin_auth");
+  const adminData = raw ? JSON.parse(raw) : null;
+  const token = adminData?.access_token;
+
+  if (!token) throw new Error("Access token tidak ditemukan.");
+
+  return apiClient.request(`/api/tenants`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function fetchTenantMenu(tenantId: string): Promise<Tenant> {
   return apiClient.request(`/api/tenants/${tenantId}`);
 }

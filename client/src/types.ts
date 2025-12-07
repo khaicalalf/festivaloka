@@ -76,19 +76,20 @@ export type OrderResult = {
 };
 
 // Admin/auth types
-export type AdminProfile = {
+export type user = {
   id: number;
   email: string;
   role: string;
   tenantId?: string;
 };
 
-export type AuthSession = AdminProfile & {
-  // access_token: string;
+export type AuthSession = user & {
+  access_token: string;
 };
 
 // API response types
 export type LoginResponse = {
+  user: user;
   access_token: string;
   id: number;
   email: string;
@@ -109,3 +110,19 @@ export type CreateTransactionResponse = {
   uuid: string;
   redirectUrl: string; // ke Midtrans
 };
+
+export interface QueueItem {
+  id: number;
+  number: string;
+  status: "WAITING" | "CALLED";
+  orderId: string;
+  tenantId: number | string;
+  createdAt: string;
+
+  order: {
+    id: string;
+    items: { qty: number; name: string; price: number }[];
+    totalAmount: number;
+    customer: { email: string; phone: string };
+  };
+}

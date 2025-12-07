@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import type { AuthSession, Tenant } from "../../types";
+import type { Tenant } from "../../types";
 import { registerAdmin, type RegisterAdminPayload } from "../../api/admin";
 import { fetchTenants } from "../../api/tenants";
 

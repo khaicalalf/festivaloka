@@ -23,6 +23,7 @@ export default function AdminLogin() {
 
     try {
       const data = await loginAdmin(email, password);
+      console.log(data);
 
       // mapping eksplisit ke AuthSession
       const session: AuthSession = {

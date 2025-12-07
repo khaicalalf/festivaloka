@@ -1,7 +1,6 @@
 import { apiClient } from "./client";
 import type {
   CartItem,
-  FoodPreference,
   TransactionDetail,
   CreateTransactionPayload,
   CreateTransactionResponse,

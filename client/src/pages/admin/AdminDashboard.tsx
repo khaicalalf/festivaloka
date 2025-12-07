@@ -1,90 +1,13 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { apiClient } from "../../api/client";
 import { useNavigate } from "react-router-dom";
 import type { Tenant, MenuItem } from "../../types";
+import { CreateTenantForm } from "../../components/admin/CreateTenantForm";
+import { createMenu, deleteMenuApi, updateMenu } from "../../api/menu";
+import { OrderHistory } from "../../components/admin/OrderHistory";
 
-// ====================================================================
-// --- KOMPONEN DUMMY: RIWAYAT ORDER (HARDCODE) ---
-// ====================================================================
-const OrderHistory = () => {
-  const dummyOrders = [
-    { id: 1, date: "2025-11-01", total: 45000, status: "SUCCESS" },
-    { id: 2, date: "2025-11-01", total: 72000, status: "PENDING" },
-    { id: 3, date: "2025-11-02", total: 110000, status: "CANCELLED" },
-  ];
-  return (
-    <div className="bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 md:p-6 space-y-4 border border-gray-100">
-      <h3 className="text-lg md:text-xl font-bold text-gray-900 border-b pb-3 mb-4">
-        Riwayat Order (Transaksi)
-      </h3>
-      <div className="space-y-3">
-        {dummyOrders.map((order) => (
-          <div
-            key={order.id}
-            className="flex flex-col sm:flex-row justify-between sm:items-center p-3 bg-gray-50 rounded-lg shadow-sm"
-          >
-            <span className="text-sm font-medium text-gray-700">
-              Order **#{order.id}** ({order.date})
-            </span>
-            <div className="flex items-center gap-3 mt-1 sm:mt-0">
-              <span
-                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  order.status === "SUCCESS"
-                    ? "bg-green-100 text-green-800"
-                    : order.status === "PENDING"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {order.status}
-              </span>
-              <span className="font-bold text-base md:text-lg text-indigo-600">
-                Rp{order.total.toLocaleString("id-ID")}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ====================================================================
-// --- KOMPONEN DUMMY: FORM TENANT BARU (UNTUK SUPER ADMIN) ---
-// ====================================================================
-const CreateTenantForm = () => {
-  return (
-    <div className="bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 md:p-6 space-y-4 border border-gray-100">
-      <h2 className="text-2xl font-bold text-indigo-600">Mode Super Admin</h2>
-      <p className="text-gray-700">
-        Sebagai Super Admin (Tenant Global), Anda harus membuat tenant pertama.
-      </p>
-      <form className="space-y-4 pt-3">
-        <input
-          type="text"
-          placeholder="Nama Tenant (Contoh: Sate Taichan Senayan)"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        <p className="text-xs text-red-500">
-          *Fungsionalitas pembuatan tenant dan update sesi admin belum
-          diimplementasikan di sini.
-        </p>
-        <button
-          type="submit"
-          disabled
-          className="px-4 py-2 bg-indigo-500 text-white rounded font-medium hover:bg-indigo-600 transition-colors cursor-not-allowed opacity-50"
-        >
-          Buat Tenant Baru
-        </button>
-      </form>
-    </div>
-  );
-};
-
-// ====================================================================
-// --- KOMPONEN MODAL TAMBAH/EDIT MENU ---
-// ====================================================================
 const MenuModal = ({
   menu,
   isOpen,
@@ -94,83 +17,87 @@ const MenuModal = ({
   menu: Partial<MenuItem> | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<MenuItem>) => void;
+  onSave: (data: { name: string; description: string; price: number }) => void;
 }) => {
-  const [name, setName] = useState(menu?.name || "");
-  const [description, setDescription] = useState(menu?.description || "");
-  const [price, setPrice] = useState(menu?.price || 0);
+  const [name, setName] = useState(menu?.name ?? "");
+  const [description, setDescription] = useState(menu?.description ?? "");
+  const [price, setPrice] = useState(menu?.price ?? 0);
 
   useEffect(() => {
     if (menu) {
-      setName(menu.name || "");
-      setDescription(menu.description || "");
-      setPrice(menu.price || 0);
+      setName(menu.name ?? "");
+      setDescription(menu.description ?? "");
+      setPrice(menu.price ?? 0);
     }
   }, [menu]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ id: menu?.id, name, description, price: Number(price) });
-    onClose();
+    onSave({ name, description, price: Number(price) });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
-        <h3 className="text-xl font-bold mb-4">
-          {menu?.id ? "Edit Menu" : "Tambah Menu Baru"}
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white border rounded-xl p-6 w-full max-w-md space-y-5">
+        {/* Header */}
+        <h3 className="text-lg font-semibold tracking-tight">
+          {menu?.id ? "Edit Menu" : "Tambah Menu"}
         </h3>
+
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nama Menu
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-sm text-gray-600">Nama Menu</label>
             <input
               type="text"
+              required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-black/20 focus:border-black/30 outline-none"
+              placeholder="Cth: Seblak Spesial"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Deskripsi
-            </label>
+
+          <div className="space-y-1.5">
+            <label className="text-sm text-gray-600">Deskripsi</label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
               required
               rows={3}
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-            ></textarea>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Harga (Rp)
-            </label>
-            <input
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              required
-              min="0"
-              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:ring-1 focus:ring-black/20 focus:border-black/30 outline-none"
+              placeholder="Deskripsi singkat menu..."
             />
           </div>
-          <div className="flex justify-end gap-3 pt-2">
+
+          <div className="space-y-1.5">
+            <label className="text-sm text-gray-600">Harga (Rp)</label>
+            <input
+              type="number"
+              min={0}
+              required
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-black/20 focus:border-black/30 outline-none"
+              placeholder="Contoh: 15000"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-3 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              className="px-3 py-1.5 text-sm border rounded-lg bg-white hover:bg-gray-50"
             >
               Batal
             </button>
+
             <button
               type="submit"
-              className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-4 py-1.5 text-sm rounded-lg bg-black text-white hover:bg-gray-900"
             >
               Simpan
             </button>
@@ -213,7 +140,7 @@ export default function AdminDashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate("/admin/login", { replace: true });
+    navigate("/admin/login");
   };
 
   // Prepare auth headers
@@ -229,7 +156,7 @@ export default function AdminDashboard() {
     // FIX: Konversi Date.now() ke String agar sesuai dengan type MenuItem.id
     setCurrentMenu(
       menu || {
-        id: String(Date.now()),
+        id: "",
         name: "",
         description: "",
         price: 0,
@@ -239,40 +166,16 @@ export default function AdminDashboard() {
     setIsMenuModalOpen(true);
   };
 
-  const handleSaveMenu = (newMenuData: Partial<MenuItem>) => {
-    if (!tenantData || !adminTenantId) return;
-
-    let updatedMenus: MenuItem[];
-
-    // Pastikan price adalah Number
-    const finalMenuData = {
-      ...newMenuData,
-      tenantId: adminTenantId,
-    } as MenuItem;
-
-    if (currentMenu && "id" in currentMenu && finalMenuData.id) {
-      // Edit Menu
-      updatedMenus = tenantData.menus.map((m) =>
-        m.id === finalMenuData.id ? finalMenuData : m
-      );
-    } else {
-      // Tambah Menu (Generate ID dummy)
-      // FIX: Konversi Date.now() ke String
-      finalMenuData.id = String(Date.now());
-      updatedMenus = [...tenantData.menus, finalMenuData];
-    }
-
-    // Update state tenantData secara lokal
-    setTenantData({ ...tenantData, menus: updatedMenus });
-    setIsMenuModalOpen(false);
-    setCurrentMenu(null);
-  };
-
-  const handleDeleteMenu = (menuId: number | string) => {
+  const handleDeleteMenu = async (menuId: number | string) => {
     if (!tenantData) return;
-    if (window.confirm("Apakah Anda yakin ingin menghapus menu ini?")) {
-      const updatedMenus = tenantData.menus.filter((m) => m.id !== menuId);
-      setTenantData({ ...tenantData, menus: updatedMenus });
+    if (!confirm("Yakin hapus menu?")) return;
+
+    try {
+      await deleteMenuApi(menuId);
+      await loadTenantData();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghapus menu");
     }
   };
 
@@ -343,15 +246,44 @@ export default function AdminDashboard() {
     return found ? found.name : "Memuat nama...";
   }, [tenants, selectedTenantId, tenantData]);
 
+  const handleSaveMenu = async (menuData: {
+    name: string;
+    description: string;
+    price: number;
+  }) => {
+    if (!tenantData) return;
+
+    const tenantId = tenantData.id;
+
+    try {
+      if (currentMenu?.id) {
+        // EDIT
+        await updateMenu(currentMenu.id, menuData);
+      } else {
+        // CREATE
+        await createMenu(tenantId, menuData);
+      }
+
+      // Refresh dari API agar 100% akurat
+      await loadTenantData();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyimpan menu");
+    } finally {
+      setIsMenuModalOpen(false);
+      setCurrentMenu(null);
+    }
+  };
+
   // --- RENDERING KOMPONEN ---
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100">
       {/* Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
+      <header className="bg-black text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between">
           <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
-            Admin Dashboard 🍔
+            Dashboard
           </h1>
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs sm:text-sm text-indigo-100 text-center">
@@ -379,7 +311,7 @@ export default function AdminDashboard() {
         )}
 
         {/* --- TAMPILAN KHUSUS SUPER ADMIN --- */}
-        {isAdminNull && <CreateTenantForm />}
+        {isAdminNull && <CreateTenantForm onCreated={loadTenants} />}
 
         {/* --- TAMPILAN UNTUK TENANT ADMIN / KARYAWAN --- */}
         {!isAdminNull && (
@@ -403,92 +335,87 @@ export default function AdminDashboard() {
             </div>
 
             {/* History Order Section */}
-            <OrderHistory />
+            <OrderHistory tenantId={Number(tenantData?.id)} />
 
-            {/* Tenant Info & Menus */}
+            {/* TENANT INFO & MENUS */}
             {tenantLoading ? (
-              // Loading State dengan animasi yang lebih baik
-              <div className="flex flex-col space-y-4 animate-pulse">
-                <div className="h-20 bg-gray-200 rounded-xl"></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <div className="h-40 bg-gray-200 rounded-xl"></div>
-                  <div className="h-40 bg-gray-200 rounded-xl"></div>
-                  <div className="h-40 bg-gray-200 rounded-xl"></div>
+              <div className="space-y-4">
+                <div className="h-16 bg-gray-100 rounded-md animate-pulse" />
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="h-24 bg-gray-100 rounded-md animate-pulse" />
+                  <div className="h-24 bg-gray-100 rounded-md animate-pulse" />
+                  <div className="h-24 bg-gray-100 rounded-md animate-pulse" />
                 </div>
               </div>
             ) : tenantData ? (
-              <div className="bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 md:p-6 space-y-4 border border-gray-100">
-                {/* Header Tenant Detail */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b">
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                    {tenantData.name}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+              <div className="bg-white border rounded-xl p-6 space-y-5">
+                {/* HEADER */}
+                <div className="flex justify-between items-start pb-4 border-b">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight">
+                      {tenantData.name}
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {tenantData.description}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <span className="px-2.5 py-1 text-xs font-medium border rounded-md text-gray-700 bg-gray-50">
                       {tenantData.category}
                     </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                    <span className="px-2.5 py-1 text-xs font-medium border rounded-md text-emerald-700 bg-emerald-50">
                       {tenantData.status}
                     </span>
                   </div>
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed pb-4">
-                  {tenantData.description}
-                </p>
 
-                {/* Menu List Section */}
-                <div className="pt-4 border-t border-gray-100">
-                  {/* LOKASI BARU TOMBOL TAMBAH MENU */}
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      Daftar Menu
-                    </h3>
+                {/* MENU */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium tracking-tight">Menu Tenant</h3>
                     <button
                       onClick={() => handleOpenMenuModal()}
-                      disabled={!tenantData}
-                      className="px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors disabled:opacity-50 shadow-md"
+                      className="text-sm px-3 py-1.5 rounded-md bg-black text-white hover:bg-gray-800 transition"
                     >
-                      + Tambah Menu
+                      + Tambah
                     </button>
                   </div>
 
                   {tenantData.menus.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 mt-4">
-                      <p className="text-gray-500 text-sm">
-                        Belum ada menu yang tersedia. Gunakan tombol 'Tambah
-                        Menu' di atas.
-                      </p>
+                    <div className="py-8 border rounded-lg text-center text-gray-500 bg-gray-50">
+                      Belum ada menu ditambahkan.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                      {tenantData.menus.map((menu: MenuItem) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {tenantData.menus.map((menu) => (
                         <div
                           key={menu.id}
-                          className="border border-gray-200 rounded-xl p-4 flex flex-col bg-white hover:shadow-xl transition-shadow duration-300 group"
+                          className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition"
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold text-gray-900 text-lg group-hover:text-indigo-600 transition-colors pr-2">
+                            <h4 className="font-semibold text-gray-800 leading-tight">
                               {menu.name}
                             </h4>
-                            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded whitespace-nowrap">
+                            <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold">
                               Rp{menu.price.toLocaleString("id-ID")}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-4 flex-grow">
+
+                          <p className="text-sm text-gray-600 line-clamp-2">
                             {menu.description}
                           </p>
 
-                          {/* TOMBOL EDIT & DELETE */}
-                          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 mt-auto">
+                          <div className="flex justify-end gap-2 pt-3 mt-3 border-t">
                             <button
                               onClick={() => handleOpenMenuModal(menu)}
-                              className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors shadow-sm"
+                              className="text-xs px-3 py-1 rounded border bg-white hover:bg-gray-100"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleDeleteMenu(menu.id)}
-                              className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors shadow-sm"
+                              className="text-xs px-3 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50"
                             >
                               Hapus
                             </button>
@@ -500,12 +427,8 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-10 bg-white rounded-xl shadow border border-gray-200">
-                <p className="text-gray-500">
-                  {selectedTenantId
-                    ? "Data tenant tidak ditemukan."
-                    : "Tidak ada tenant yang terhubung dengan akun ini."}
-                </p>
+              <div className="text-center p-8 bg-white border rounded-xl">
+                <p className="text-gray-500">Tenant tidak ditemukan.</p>
               </div>
             )}
           </>

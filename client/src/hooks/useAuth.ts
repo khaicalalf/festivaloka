@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import type { AuthSession } from "../types";
 
@@ -11,7 +12,11 @@ export function useAuth() {
       try {
         const parsed: AuthSession = JSON.parse(stored);
         // validasi minimal: harus ada access_token
-        if (parsed && typeof parsed.access_token === "string" && parsed.access_token.length > 0) {
+        if (
+          parsed &&
+          typeof parsed.access_token === "string" &&
+          parsed.access_token.length > 0
+        ) {
           setAdmin(parsed);
         } else {
           localStorage.removeItem("admin_auth");
