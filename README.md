@@ -374,11 +374,11 @@ UNLICENSED - Private Project
   📧 mghaiksal@gmail.com
 
 #### Members
-- **Acmad Fadli Aditama** - Developer
-- **Bayfore** (bayfore@gmail.com) - Developer
-- **Meadraizhen** (meadraizhen@gmail.com) - Developer
-- **Ahmad Riyadh** - Developer
-- **Muhammad Ghufron Khaical Alfaris** - Team Leader
+- **Acmad Fadli Aditama** (profadlibae@gmail.com) - BE Developer
+- **Bayu Catur Ramadhan** (bayfore@gmail.com) - FE Developer
+- **M. Edu Agritama** (meadraizhen@gmail.com) - FE Developer
+- **Ahmad Ryadh** (ahmadryadh721@gmail.com)- FE Developer
+- **Muhammad Ghufron Khaical Alfaris** (mghaikal@gmail.com) - Team Leader
 
 ---
 
