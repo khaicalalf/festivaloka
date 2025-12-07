@@ -6,7 +6,7 @@ export async function fetchTenants(): Promise<Tenant[]> {
 }
 
 export async function getTenantsByAI(ref: string | null): Promise<Tenant[]> {
-  const query = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+  const query = ref ? `?preferences=${encodeURIComponent(ref)}` : "";
   return apiClient.request<Tenant[]>(`/api/kolosal-ai/tenantsByAI${query}`, {
     method: "GET",
   });

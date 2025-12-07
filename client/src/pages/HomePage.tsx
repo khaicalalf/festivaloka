@@ -95,7 +95,7 @@ export function HomePage() {
         {prefOpen && editingPref ? (
           <PreferenceForm
             value={preferences ?? ""}
-            onChange={setPreferences}
+            onChange={(next) => setPreferences(next)}
             onSubmit={() => {
               localStorage.setItem("preferences", preferences);
               setEditingPref(false);
