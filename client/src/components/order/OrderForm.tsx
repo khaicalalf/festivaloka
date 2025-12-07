@@ -62,7 +62,7 @@ export function OrderForm({
               onClick={onCancel}
               className="text-gray-500 hover:text-gray-800 text-sm"
             >
-              ❌ Batal
+              ❌
             </button>
           </div>
 
