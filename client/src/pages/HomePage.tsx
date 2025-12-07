@@ -19,6 +19,7 @@ export function HomePage() {
     localStorage.getItem("preferences") ?? ""
   );
   const [prefOpen, setPrefOpen] = useState(preferences === "");
+  const [tempPreferences, setTempPreferences] = useState(""); // Temporary state untuk editing
   const [contact, setContact] = useState(() => {
     const saved = localStorage.getItem("contact");
     return saved ? JSON.parse(saved) : { email: "", phone: "" };
@@ -94,10 +95,12 @@ export function HomePage() {
       <section>
         {prefOpen && editingPref ? (
           <PreferenceForm
-            value={preferences ?? ""}
-            onChange={(next) => setPreferences(next)}
+            value={tempPreferences}
+            onChange={setTempPreferences}
             onSubmit={() => {
-              localStorage.setItem("preferences", preferences);
+              // Update preferences state HANYA saat klik simpan
+              setPreferences(tempPreferences);
+              localStorage.setItem("preferences", tempPreferences);
               setEditingPref(false);
               //setIsCollapsed(true);
             }}
@@ -111,6 +114,8 @@ export function HomePage() {
           <PreferenceSummary
             pref={preferences ?? ""}
             onEdit={() => {
+              // Initialize tempPreferences dengan nilai preferences saat ini
+              setTempPreferences(preferences);
               setEditingPref(true);
               setPrefOpen(true);
               //setIsCollapsed(false);
