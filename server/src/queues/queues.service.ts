@@ -6,14 +6,10 @@ const prisma = new PrismaClient();
 @Injectable()
 export class QueuesService {
 
-    // 1. USER: Ambil Nomor Antrian (Scan QR atau Auto dari Order)
-    // PERBAIKAN: Tambahkan parameter opsional 'orderId'
     async joinQueue(tenantId: number, orderId?: string) {
-        // Cek tokonya ada gak?
         const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
         if (!tenant) throw new NotFoundException('Toko tidak ditemukan');
 
-        // Hitung antrian HARI INI saja
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -24,25 +20,22 @@ export class QueuesService {
             }
         });
 
-        const queueNumber = `A-${countToday + 1}`; // A-1, A-2...
+        const queueNumber = `A-${countToday + 1}`;
 
-        // Simpan ke Database
         const newQueue = await prisma.queue.create({
             data: {
                 number: queueNumber,
                 tenantId: tenantId,
                 status: 'WAITING',
-                orderId: orderId // 👈 Sekarang aman, karena ada di parameter
+                orderId: orderId
             }
         });
 
-        // Update status keramaian toko
         await this.updateTenantCrowdStatus(tenantId);
 
         return newQueue;
     }
 
-    // 2. PUBLIC: Cek Info Keramaian
     async getQueueInfo(tenantId: number) {
         const waitingCount = await prisma.queue.count({
             where: { tenantId, status: 'WAITING' }
@@ -62,7 +55,6 @@ export class QueuesService {
         };
     }
 
-    // 3. TENANT: Panggil atau Selesaikan Antrian
     async updateStatus(queueId: number, status: 'CALLED' | 'DONE' | 'CANCELLED') {
         const queue = await prisma.queue.update({
             where: { id: queueId },
@@ -73,7 +65,6 @@ export class QueuesService {
         return queue;
     }
 
-    // 4. TENANT: Dashboard (Lihat antrian + detail pesanan)
     async getTenantDashboard(tenantId: number) {
         return await prisma.queue.findMany({
             where: {
@@ -96,7 +87,6 @@ export class QueuesService {
         });
     }
 
-    // --- HELPER ---
     private async updateTenantCrowdStatus(tenantId: number) {
         const waitingCount = await prisma.queue.count({
             where: { tenantId, status: 'WAITING' }

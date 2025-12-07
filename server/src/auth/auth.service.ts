@@ -12,7 +12,7 @@ export class AuthService {
 
     // 1. REGISTER (Buat Akun Baru)
     async register(data: RegisterDto) {
-        // Cek apakah email sudah dipakai?
+        // Cek validasi email
         const existingUser = await prisma.userTenant.findUnique({
             where: { email: data.email }
         });
@@ -34,7 +34,6 @@ export class AuthService {
             }
         });
 
-        // Hilangkan password dari response biar aman
         const { password, ...result } = newUser;
         return result;
     }
@@ -52,7 +51,6 @@ export class AuthService {
         const isMatch = await bcrypt.compare(data.password, user.password);
         if (!isMatch) throw new UnauthorizedException('Email atau Password salah');
 
-        // Buat Payload Token (Isi dompet digital user)
         const payload = {
             sub: user.id,
             email: user.email,
