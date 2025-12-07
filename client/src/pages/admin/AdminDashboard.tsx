@@ -139,7 +139,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string>("");
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // hapus sesi
+    localStorage.removeItem("admin_auth"); // hapus sesi
     navigate("/admin/login", { replace: true }); // redirect
   };
 
