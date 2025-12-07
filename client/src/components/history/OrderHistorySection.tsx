@@ -18,6 +18,11 @@ export function OrderHistorySection() {
 
   const { history, loading } = useOrderHistory(email);
 
+  const pointsEarned = history.reduce(
+    (sum, order) => sum + order.pointsEarned,
+    0
+  );
+
   const waitingOnly = history.filter(
     (h) =>
       h.queue?.status === "WAITING" ||
@@ -87,7 +92,10 @@ export function OrderHistorySection() {
   =========================== */
   return (
     <div className="border rounded-xl p-4 bg-white shadow-sm space-y-3">
-      <h3 className="font-semibold text-lg">Riwayat Pesanan</h3>
+      <div className="flex justify-between m-4">
+        <h3 className="font-semibold text-lg">Riwayat Pesanan</h3>
+        <h2 className="font-semibold text-md">🌟 Poinmu : {pointsEarned}</h2>
+      </div>
 
       {loading ? (
         <p className="text-sm text-gray-500 animate-pulse">Memuat...</p>
