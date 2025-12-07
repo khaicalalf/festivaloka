@@ -36,6 +36,6 @@ export class AiController {
   @Post('voice-order')
   @ApiOperation({ summary: 'Terjemahkan Suara User jadi Order (JSON)' })
   async orderFromVoice(@Body() data: VoiceOrderDto) {
-    return this.aiService.predictOrderFromVoice(data.speechText);
+    return this.aiService.predictOrderFromVoice(data.query);
   }
 }
