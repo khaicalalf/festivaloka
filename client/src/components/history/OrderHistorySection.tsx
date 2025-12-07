@@ -27,7 +27,15 @@ export function OrderHistorySection() {
 
   const latestTwoWaiting = waitingOnly.slice(0, 1);
 
-  const showHistory = expanded ? history : latestTwoWaiting;
+  const called = history.filter((h) => h.queue?.status === "CALLED");
+
+  const latestCalled = called.slice(0, 1);
+
+  const showHistory = expanded
+    ? history
+    : called.length > 0
+    ? latestCalled
+    : latestTwoWaiting;
 
   /* ==========================
         SIMPAN EMAIL BARU

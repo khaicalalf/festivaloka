@@ -30,6 +30,7 @@ export function CreateTenantForm({ onCreated }: Props) {
       });
 
       onCreated(); // refresh tenant list
+      window.location.reload();
     } catch (err: unknown) {
       let message = "Terjadi kesalahan saat login";
       if (err instanceof Error && err.message) {
