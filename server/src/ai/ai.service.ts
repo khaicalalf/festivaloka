@@ -245,8 +245,8 @@ export class AiService {
         }
     }
 
-    async predictOrderFromVoice(speechText: string) {
-        console.log(`🎤 Voice Input: "${speechText}"`);
+    async predictOrderFromVoice(query: string) {
+        console.log(`🎤 Voice Input: "${query}"`);
 
         const tenants = await this.prisma.tenant.findMany({
             include: {
@@ -284,7 +284,7 @@ export class AiService {
         Daftar Menu Tersedia:
         ${JSON.stringify(menuContext)}
 
-        User Berkata: "${speechText}"
+        User Berkata: "${query}"
 
         Tugasmu:
         1. Analisa keinginan user (Rasa, Kecepatan/Waktu, Harga, Kuantitas).
