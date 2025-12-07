@@ -1,10 +1,13 @@
 # FestivaLoka 🎪
 
-Platform manajemen festival yang menghubungkan pengunjung dengan tenant (pedagang) di acara festival. Sistem ini menyediakan fitur pemesanan makanan/minuman, manajemen antrian, dan rekomendasi AI untuk meningkatkan pengalaman pengunjung festival.
+> **Hackathon IMPHNEN x KOLOSAL AI**  
+> Platform manajemen festival berbasis AI yang menghubungkan pengunjung dengan tenant (pedagang) di acara festival. Sistem ini menyediakan fitur pemesanan makanan/minuman, manajemen antrian, dan rekomendasi AI untuk meningkatkan pengalaman pengunjung festival.
 
 ## 📋 Deskripsi Proyek
 
-FestivaLoka adalah aplikasi web fullstack yang dirancang untuk mempermudah pengelolaan festival dan meningkatkan pengalaman pengunjung. Platform ini memungkinkan:
+FestivaLoka adalah aplikasi web fullstack yang dikembangkan untuk **Hackathon IMPHNEN**, memanfaatkan teknologi **KOLOSAL AI** untuk memberikan pengalaman festival yang lebih cerdas dan efisien. Platform ini dirancang untuk mempermudah pengelolaan festival dan meningkatkan pengalaman pengunjung melalui rekomendasi berbasis AI.
+
+Platform ini memungkinkan:
 
 - **Pengunjung**: Memesan makanan/minuman, melihat denah festival, mendapat rekomendasi AI, dan mengumpulkan poin loyalitas
 - **Tenant**: Mengelola menu, memantau pesanan, dan mengatur status toko
@@ -17,7 +20,7 @@ FestivaLoka adalah aplikasi web fullstack yang dirancang untuk mempermudah penge
 - **Database**: PostgreSQL + Prisma ORM
 - **Authentication**: JWT + Passport
 - **Payment Gateway**: Midtrans
-- **AI Integration**: Untuk rekomendasi tenant dan menu
+- **AI Integration**: KOLOSAL AI untuk rekomendasi tenant dan menu
 - **API Documentation**: Swagger/OpenAPI
 
 ### Frontend
@@ -266,6 +269,17 @@ npm run test:cov
 
 Contributions, issues, dan feature requests sangat diterima!
 
+## 🏆 Hackathon
+
+Proyek ini dikembangkan untuk **Hackathon IMPHNEN** dengan memanfaatkan teknologi **KOLOSAL AI** untuk memberikan rekomendasi cerdas kepada pengunjung festival berdasarkan preferensi mereka.
+
+### Implementasi KOLOSAL AI
+Fitur AI digunakan untuk:
+- Menganalisis preferensi pengunjung
+- Memberikan rekomendasi tenant yang sesuai
+- Menyarankan menu berdasarkan riwayat pemesanan
+- Optimasi pengalaman pengguna dengan machine learning
+
 ## 📄 License
 
 UNLICENSED - Private Project
@@ -276,4 +290,5 @@ UNLICENSED - Private Project
 
 ---
 
-**FestivaLoka** - Membuat pengalaman festival lebih mudah dan menyenangkan! 🎉
+**FestivaLoka** - Membuat pengalaman festival lebih mudah dan menyenangkan! 🎉  
+*Powered by KOLOSAL AI | Built for Hackathon IMPHNEN*
