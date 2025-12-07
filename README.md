@@ -3,6 +3,10 @@
 > **Hackathon IMPHNEN x KOLOSAL AI**  
 > Platform manajemen festival berbasis AI yang menghubungkan pengunjung dengan tenant (pedagang) di acara festival. Sistem ini menyediakan fitur pemesanan makanan/minuman, manajemen antrian, dan rekomendasi AI untuk meningkatkan pengalaman pengunjung festival.
 
+🌐 **Live Demo**: [festivaloka.netlify.app](https://festivaloka.netlify.app)  
+🔗 **API Documentation**: [festivaloka-dev.up.railway.app/docs](https://festivaloka-dev.up.railway.app/docs)
+
+
 ## 📋 Deskripsi Proyek
 
 FestivaLoka adalah aplikasi web fullstack yang dikembangkan untuk **Hackathon IMPHNEN**, memanfaatkan teknologi **KOLOSAL AI** untuk memberikan pengalaman festival yang lebih cerdas dan efisien. Platform ini dirancang untuk mempermudah pengelolaan festival dan meningkatkan pengalaman pengunjung melalui rekomendasi berbasis AI.
@@ -44,14 +48,12 @@ Platform ini memungkinkan:
 - 📊 Dashboard untuk monitoring pesanan
 - 🍕 Manajemen menu (tambah, edit, hapus)
 - 📋 Manajemen antrian pelanggan
-- 📈 Status toko (OPEN/CLOSED/BUSY)
+- 📈 Status toko (SEPI/SEDANG/RAMAI)
 - 💰 Laporan transaksi
 
 ### Untuk Admin
 - 👥 Manajemen tenant festival
-- 🔐 Sistem role-based access (Super Admin & Tenant Admin)
-- 📊 Monitoring transaksi keseluruhan
-- 📈 Analytics dan reporting
+- 🔐 Sistem role-based access (Tenant Admin & Tenant Karyawan)
 
 ## 🏗️ Struktur Database
 
@@ -128,11 +130,6 @@ Base URL: `http://localhost:3000/api`
 **Live API**: `https://festivaloka-dev.up.railway.app/api`  
 **Swagger Documentation**: [https://festivaloka-dev.up.railway.app/docs](https://festivaloka-dev.up.railway.app/docs)
 
-### App (Default)
-```
-GET    /api                  - Health check / API info
-```
-
 ### Authentication (UserTenant)
 ```
 POST   /api/auth/register    - Register user baru (tenant admin)
@@ -141,39 +138,40 @@ POST   /api/auth/login       - Login untuk tenant admin
 
 ### Tenants (Management)
 ```
-POST   /api/tenants          - Create tenant baru (admin only)
 GET    /api/tenants          - Get semua tenant
+POST   /api/tenants          - Create tenant baru (admin only)
 GET    /api/tenants/:id      - Get detail tenant
-PATCH  /api/tenants/:id      - Update tenant
+PUT  /api/tenants/:id      - Update tenant
 DELETE /api/tenants/:id      - Delete tenant (admin only)
 ```
 
 ### Tenant Menus (Management Menu per Tenant)
 ```
 POST   /api/tenants/:tenantId/menus        - Create menu baru untuk tenant
-GET    /api/tenants/:tenantId/menus        - Get semua menu dari tenant
-PATCH  /api/tenants/:tenantId/menus/:menuId - Update menu
-DELETE /api/tenants/:tenantId/menus/:menuId - Delete menu
+PUT  /api/tenants/menus/:menuId            - Update menu
+DELETE /api/tenants/menus/:menuId          - Delete menu
 ```
 
 ### Orders (Pesanan & Pembayaran)
 ```
-POST   /api/orders           - Create order baru (dengan Midtrans payment)
-POST   /api/orders/voice     - Create order via voice input
-POST   /api/orders/webhook   - Midtrans payment webhook
-GET    /api/orders/tenant/:tenantId - Get orders per tenant
-GET    /api/orders/:id/status       - Get status order
+GET    /api/orders/result/:id       - Get result order
+GET    /api/orders/history          - Get history order by email
+POST   /api/orders/checkout         - Create order baru (dengan Midtrans payment)
+POST   /api/orders/notifications    - Midtrans payment webhook
 ```
 
 ### Queues (Sistem Antrian)
 ```
-GET    /api/queues/dashboard/:tenantId - Get dashboard antrian untuk tenant
-PATCH  /api/queues/:id/status          - Update status antrian
+GET    /api/queues/info/:tenantId    - Get dashboard antrian untuk tenant
+GET    /api/queues/dashboard/:tenantId - Get detail antrian
+PATCH  /api/queues/:id/status        - Update status antrian
 ```
 
 ### AI (KOLOSAL AI - Rekomendasi)
 ```
-POST   /api/ai/recommend     - Get rekomendasi tenant berdasarkan preferensi pengunjung
+GET   /api/kolosal-ai/tenantByAI     - Get rekomendasi tenant berdasarkan preferensi pengunjung
+POST   /api/kolosal-ai/rekomendasi     - Get rekomendasi tenant berdasarkan preferensi pengunjung
+POST   /api/kolosal-ai/voice-order     - Create order via voice input
 ```
 
 > **📖 Dokumentasi Lengkap**  
