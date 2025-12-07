@@ -1,71 +1,77 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 import { fetchOrderResult } from "../api/orders";
 import type { OrderResult } from "../types";
 
 export function TransactionResultPage() {
   const { id: pathId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const [order, setOrder] = useState<OrderResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /* CLEAN REDIRECT LOGIC */
-  useEffect(() => {
+  /* --------------------------------------------
+      Kakek bikin fungsi buat ambil ID yang valid
+     -------------------------------------------- */
+  const getOrderId = () => {
     const params = new URLSearchParams(location.search);
     const queryId = params.get("order_id");
 
-    if (!pathId && queryId) {
-      navigate(`/transaction/${queryId}`, { replace: true });
-      return;
-    }
+    // Prioritas: pathId > queryId
+    if (pathId) return pathId;
+    if (queryId) return queryId;
 
-    if (pathId && queryId && pathId !== queryId) {
-      navigate(`/transaction/${queryId}`, { replace: true });
-      return;
-    }
+    return null;
+  };
 
-    if (pathId && location.search) {
-      navigate(`/transaction/${pathId}`, { replace: true });
-    }
-  }, [pathId, location, navigate]);
+  const finalOrderId = getOrderId();
 
-  /* Fetch wrapper */
+  /* --------------------------------------------
+      Fetch order tanpa redirect
+     -------------------------------------------- */
   const loadOrder = useCallback(async () => {
-    if (!pathId) return;
+    if (!finalOrderId) {
+      setError("ID transaksi tidak ditemukan.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await fetchOrderResult(pathId);
+      const data = await fetchOrderResult(finalOrderId);
       setOrder(data);
     } catch (e) {
-      if (e instanceof Error) setError(e.message);
-      else setError("Gagal memuat detail transaksi.");
+      setError(e instanceof Error ? e.message : "Gagal memuat transaksi.");
     } finally {
       setLoading(false);
     }
-  }, [pathId]);
+  }, [finalOrderId]);
 
   useEffect(() => {
     loadOrder();
   }, [loadOrder]);
 
-  /* Auto Refresh Pending */
+  /* --------------------------------------------
+      Auto Refresh kalau masih pending
+     -------------------------------------------- */
   useEffect(() => {
     if (!order) return;
 
-    const stillPending =
+    const pending =
       order.status === "PENDING" ||
       order.queueStatus === "WAITING" ||
       order.queueStatus === "PROCESSING";
 
-    if (!stillPending) return;
+    if (!pending) return;
 
     const t = setTimeout(() => loadOrder(), 2000);
     return () => clearTimeout(t);
   }, [order, loadOrder]);
 
-  /* Loading Skeleton */
+  /* --------------------------------------------
+      UI STATE
+     -------------------------------------------- */
+
   if (loading) {
     return (
       <div className="max-w-lg mx-auto p-6 space-y-6">
@@ -80,9 +86,7 @@ export function TransactionResultPage() {
   if (error || !order) {
     return (
       <div className="max-w-lg mx-auto p-6 space-y-4 animate-fade-in">
-        <p className="text-red-600 font-medium text-lg">
-          Terjadi kesalahan: {error}
-        </p>
+        <p className="text-red-600 font-medium text-lg">{error}</p>
         <Link to="/" className="text-blue-600 underline">
           Kembali ke Beranda
         </Link>
@@ -90,7 +94,6 @@ export function TransactionResultPage() {
     );
   }
 
-  /* Premium Colors */
   const statusMap = {
     PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
     PENDING: "bg-amber-50 text-amber-700 border-amber-200",
@@ -99,24 +102,13 @@ export function TransactionResultPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-6 animate-fade-in premium-container">
-      {/* HEADER */}
-      <h1 className="text-2xl font-semibold tracking-tight animate-slide-up">
-        Ringkasan Transaksi
-      </h1>
-
-      {/* PAYMENT STATUS */}
+    <div className="max-w-lg mx-auto p-6 space-y-6 animate-fade-in">
+      <h1 className="text-2xl font-semibold">Ringkasan Transaksi</h1>
 
       <div
-        className={`rounded-xl border p-5 shadow-sm animate-slide-up ${
-          statusMap[order.status]
-        }`}
+        className={`rounded-xl border p-5 shadow-sm ${statusMap[order.status]}`}
       >
-        <p className="font-semibold text-lg flex items-center gap-2">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-current"></span>
-          Status Pembayaran
-        </p>
-
+        <p className="font-semibold text-lg">Status Pembayaran</p>
         <p className="text-sm mt-1">{order.status}</p>
 
         {order.status === "PENDING" && (
@@ -126,29 +118,25 @@ export function TransactionResultPage() {
         )}
       </div>
 
-      {/* QUEUE STATUS */}
+      {/* ANTRIAN */}
       {order.queueNumber && (
-        <div className="rounded-xl border p-5 shadow-sm animate-slide-up">
+        <div className="rounded-xl border p-5 shadow-sm">
           <p className="font-semibold text-lg">Nomor Antrian</p>
-
-          <p className="text-4xl font-bold tracking-tight mt-1">
-            {order.queueNumber}
-          </p>
-
-          <p className="text-sm mt-1 opacity-90">Status: {order.queueStatus}</p>
+          <p className="text-4xl font-bold mt-1">{order.queueNumber}</p>
+          <p className="text-sm mt-1">Status: {order.queueStatus}</p>
         </div>
       )}
 
-      {/* TENANT INFO */}
-      <div className="rounded-xl border p-5 shadow-inner-sm animate-slide-up bg-white/70 backdrop-blur">
+      {/* TENANT */}
+      <div className="rounded-xl border p-5 shadow-sm bg-white/70 backdrop-blur">
         <p className="font-semibold text-lg">{order.tenant.name}</p>
         {order.tenant.address && (
-          <p className="text-sm mt-0.5 opacity-70">{order.tenant.address}</p>
+          <p className="text-sm opacity-70">{order.tenant.address}</p>
         )}
       </div>
 
-      {/* ORDER ITEMS */}
-      <div className="rounded-xl border p-5 shadow-inner-sm animate-slide-up bg-white/70 backdrop-blur">
+      {/* ITEMS */}
+      <div className="rounded-xl border p-5 shadow-sm bg-white/70 backdrop-blur">
         <p className="font-semibold text-lg mb-3">Detail Pesanan</p>
 
         <div className="space-y-2">
@@ -163,16 +151,14 @@ export function TransactionResultPage() {
         </div>
 
         <hr className="my-3" />
-
         <p className="font-semibold text-right text-xl">
           Rp{order.totalAmount.toLocaleString("id-ID")}
         </p>
       </div>
 
-      {/* BACK BUTTON */}
       <Link
         to="/"
-        className="block text-center bg-black text-white py-3 rounded-xl shadow-md hover:bg-neutral-900 transition-all duration-200 animate-slide-up"
+        className="block text-center bg-black text-white py-3 rounded-xl shadow-md"
       >
         Kembali ke Beranda
       </Link>
