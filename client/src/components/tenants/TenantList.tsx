@@ -17,7 +17,7 @@ export function TenantList({
   }
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
       {tenants.map((tenant) => (
         <TenantCard
           key={tenant.id}
