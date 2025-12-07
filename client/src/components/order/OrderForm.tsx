@@ -49,7 +49,7 @@ export function OrderForm({
       >
         <div
           className="
-          w-1/3 bg-white rounded-t-2xl p-5 
+          w-full md:w-1/3 bg-white rounded-t-2xl p-5 
           animate-slideUp
           max-h-[85vh] overflow-y-auto space-y-4
         "
