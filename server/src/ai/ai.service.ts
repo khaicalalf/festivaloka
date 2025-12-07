@@ -16,7 +16,6 @@ export class AiService {
     ) { }
 
     async recommend(preferences: string[]) {
-        // 1. Ambil data Tenant dari db
         const allTenants = await this.tenantsService.findAll();
 
         const tenantData = allTenants.map(t => ({
@@ -27,7 +26,6 @@ export class AiService {
             menus: t.menus.map(m => m.name).join(', ')
         }));
 
-        // 2. Siapkan Prompt untuk AI
         const userRequest = preferences.join(', ');
 
         const prompt = `
@@ -46,7 +44,6 @@ export class AiService {
       ]
     `;
 
-        // 3. Tembak ke API Kolosal AI
         try {
             const response = await firstValueFrom(
                 this.httpService.post('https://api.kolosal.ai/v1/chat/completions', {
@@ -78,44 +75,33 @@ export class AiService {
     }
 
     async getSmartRecommendations(preferences: string = "") {
-        console.log(`🤖 AI Processing... Preferences: "${preferences || 'None'}"`);
-
-        // Setting: Toko dianggap sepi jika tidak ada order dalam 45 menit
         const IDLE_THRESHOLD_MINUTES = 45;
 
-        // 1. AMBIL DATA DARI DATABASE (Tenant + Menu + Queue History)
         const tenants = await this.prisma.tenant.findMany({
             include: {
                 menus: { select: { id: true, name: true, price: true } },
                 queues: {
-                    take: 50, // Ambil sampel 50 antrian terakhir
-                    orderBy: { createdAt: 'desc' }, // Urutkan dari yang paling baru dibuat
+                    take: 50,
+                    orderBy: { createdAt: 'desc' },
                     select: { status: true, createdAt: true, updatedAt: true }
                 }
             }
         });
 
-        // 2. PRE-PROCESS DATA (Hitung Statistik & Cek Promo Double Poin) 🛠️
         const tenantsContext = tenants.map(t => {
-            // A. Hitung Antrian 'WAITING'
             const waitingCount = t.queues.filter(q => q.status === 'WAITING').length;
-
-            // B. Hitung Rata-rata Kecepatan Masak (Dari data 'DONE')
             const completedOrders = t.queues.filter(q => q.status === 'DONE');
-            let avgPrepTimeMinutes = 10; // Default standar 10 menit
+            let avgPrepTimeMinutes = 10;
 
             if (completedOrders.length > 0) {
                 const totalDuration = completedOrders.reduce((acc, q) => {
-                    // Selisih waktu Selesai - Dibuat (dalam menit)
                     const duration = (q.updatedAt.getTime() - q.createdAt.getTime()) / 60000;
                     return acc + duration;
                 }, 0);
                 avgPrepTimeMinutes = Math.round(totalDuration / completedOrders.length);
             }
 
-            // C. LOGIC DOUBLE POIN (Cek Kapan Order Terakhir Dibuat) 💎
-            // Kita cari order terakhir (status apa saja, yang penting ada aktivitas)
-            const lastActivity = t.queues[0]; // Karena sudah di sort desc di query
+            const lastActivity = t.queues[0];
             let isDoublePoint = false;
             let minutesSinceLastOrder = 999;
 
@@ -125,24 +111,19 @@ export class AiService {
                 minutesSinceLastOrder = Math.round(diffMs / 60000);
             }
 
-            // SYARAT BARU:
-            // 1. Toko Baru (gapunya history) -> OK
-            // 2. ATAU (Sepi > 45 Menit DAN Antrian Kosong) -> OK
             const isIdleTime = minutesSinceLastOrder >= IDLE_THRESHOLD_MINUTES;
-            const isQueueEmpty = waitingCount === 0; // 👈 Wajib Kosong!
+            const isQueueEmpty = waitingCount === 0;
 
             if (!lastActivity || (isIdleTime && isQueueEmpty)) {
                 isDoublePoint = true;
             }
 
-            // D. Siapkan Data untuk AI (Context)
             return {
                 id: t.id,
                 name: t.name,
                 category: t.category,
                 menus: t.menus.map(m => m.name).join(', ').substring(0, 200),
 
-                // Data Promo untuk AI pertimbangkan
                 promotion: {
                     isDoublePoint: isDoublePoint,
                     info: isDoublePoint ? "PROMO: Dapatkan 2x Poin karena toko sedang sepi!" : null
@@ -156,7 +137,6 @@ export class AiService {
             };
         });
 
-        // 3. RAKIT PROMPT 🧠
         const prompt = `
         Data Tenant & Statistik Realtime:
         ${JSON.stringify(tenantsContext)}
@@ -187,7 +167,6 @@ export class AiService {
         ]
         `;
 
-        // 4. KIRIM KE API AI 🚀
         try {
             const url = 'https://api.kolosal.ai/v1/chat/completions';
             const apiKey = this.configService.get('API_KEY_KOLOSAL_AI');
@@ -204,7 +183,6 @@ export class AiService {
                 })
             );
 
-            // 5. PARSING JSON YANG ROBUST (ANTI ERROR) 🛡️
             let textResult = response.data.choices?.[0]?.message?.content || "[]";
             const firstBracket = textResult.indexOf('[');
             const lastBracket = textResult.lastIndexOf(']');
@@ -222,20 +200,15 @@ export class AiService {
                 throw new Error("AI Response format invalid (No JSON Array found)");
             }
 
-            // 6. GABUNGKAN DATA (HYDRATION)
-            // Kita gabungkan hasil AI dengan Data Promo yang sudah kita hitung di awal
             const finalResult = aiRecommendations.map((rec: any) => {
-                // Cari data original (termasuk status promo) dari tenantsContext
                 const contextData = tenantsContext.find(t => t.id === rec.id);
                 const originalDbData = tenants.find(t => t.id === rec.id);
 
                 if (!contextData || !originalDbData) return null;
 
                 return {
-                    ...originalDbData, // Data DB (Nama, Gambar, dll)
-                    queues: undefined, // Bersihkan raw queue
-
-                    // Masukkan Info Promo ke Root Object biar enak dibaca Frontend
+                    ...originalDbData,
+                    queues: undefined,
                     promotion: contextData.promotion,
                     queueCount: contextData.stats.currentQueue,
 
@@ -247,27 +220,21 @@ export class AiService {
                 };
             }).filter(item => item !== null);
 
-            // Sortir dari score tertinggi
             return finalResult.sort((a, b) => b.ai_insight.score - a.ai_insight.score);
 
         } catch (error) {
-            console.error("⚠️ AI Service Error (Switching to Fallback):", error.message);
-
-            // --- FALLBACK MANUAL (JIKA AI MATI) ---
-            // Tetap jalankan fitur Double Poin meskipun AI mati
             return tenantsContext.map(ctx => {
                 const originalDbData = tenants.find(t => t.id === ctx.id);
 
-                // Hitung estimasi waktu manual
                 const estTime = ctx.stats.currentQueue * ctx.stats.avgSpeedPerOrder;
 
                 return {
                     ...originalDbData,
                     queues: undefined,
-                    promotion: ctx.promotion, // Promo tetap jalan!
+                    promotion: ctx.promotion,
                     queueCount: ctx.stats.currentQueue,
                     ai_insight: {
-                        score: ctx.promotion.isDoublePoint ? 80 : 50, // Boost manual kalau promo
+                        score: ctx.promotion.isDoublePoint ? 80 : 50,
                         wait_prediction: estTime === 0 ? `Langsung` : `± ${estTime} Menit`,
                         reason: ctx.promotion.isDoublePoint
                             ? "Mode Offline. Ada Promo Double Poin!"
@@ -281,23 +248,19 @@ export class AiService {
     async predictOrderFromVoice(speechText: string) {
         console.log(`🎤 Voice Input: "${speechText}"`);
 
-        // 1. SIAPKAN DATA (Menu + Tenant + Estimasi Waktu)
         const tenants = await this.prisma.tenant.findMany({
             include: {
                 menus: true,
                 queues: {
-                    where: { status: 'WAITING' }, // Cuma butuh antrian aktif
-                    select: { id: true } // Hemat memori
+                    where: { status: 'WAITING' },
+                    select: { id: true }
                 }
             }
         });
 
-        // 2. FLATTEN DATA (Jadikan List Menu Datar untuk AI)
-        // Kita butuh format text yang gampang dibaca AI
         let menuContext: any[] = [];
 
         tenants.forEach(t => {
-            // Hitung kasar keramaian (Antrian * 10 menit)
             const estTime = t.queues.length * 10;
             const crowdStatus = t.queues.length > 5 ? "Ramai/Lama" : "Sepi/Cepat";
 
@@ -310,15 +273,13 @@ export class AiService {
                         menuName: m.name,
                         price: m.price,
                         description: m.description,
-                        // Data Kontekstual untuk AI:
                         waitInfo: `${t.queues.length} antrian (${crowdStatus}, ±${estTime} menit)`,
-                        tags: t.category // Tambahan info kategori
+                        tags: t.category
                     });
                 }
             });
         });
 
-        // 3. PROMPT ENGINEERING 🧠
         const prompt = `
         Daftar Menu Tersedia:
         ${JSON.stringify(menuContext)}
@@ -340,7 +301,6 @@ export class AiService {
         }
         `;
 
-        // 4. TEMBAK KE AI
         try {
             const url = 'https://api.kolosal.ai/v1/chat/completions';
             const apiKey = this.configService.get('API_KEY_KOLOSAL_AI');
@@ -354,7 +314,6 @@ export class AiService {
                 })
             );
 
-            // 5. PARSING JSON (Pake teknik substring yg aman tadi)
             let textResult = response.data.choices?.[0]?.message?.content || "{}";
             const firstBrace = textResult.indexOf('{');
             const lastBrace = textResult.lastIndexOf('}');
@@ -363,12 +322,10 @@ export class AiService {
                 const jsonString = textResult.substring(firstBrace, lastBrace + 1);
                 const result = JSON.parse(jsonString);
 
-                // Kembalikan format final yang diminta
                 return {
                     tenantId: result.tenantId,
                     menuId: result.menuId,
                     quantity: result.quantity || 1,
-                    // Opsional: Saya sertakan alasan AI biar seru dilihat di console FE
                     _debug_reason: result.reason
                 };
             } else {
@@ -377,7 +334,6 @@ export class AiService {
 
         } catch (error) {
             console.error("Voice AI Error:", error.message);
-            // Fallback: Kembalikan null atau error biar FE tau AI gagal mengerti
             return {
                 tenantId: null,
                 menuId: null,

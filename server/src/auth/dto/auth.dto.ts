@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-// 1. DTO untuk LOGIN
 export class LoginDto {
     @ApiProperty({ example: 'admin@toko.com', description: 'Email pengguna' })
     email: string;
@@ -9,7 +8,6 @@ export class LoginDto {
     password: string;
 }
 
-// 2. DTO untuk REGISTER (Mewarisi Login, plus field tambahan)
 export class RegisterDto extends LoginDto {
     @ApiProperty({
         example: 'TENANT_ADMIN',

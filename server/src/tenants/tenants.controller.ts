@@ -12,7 +12,6 @@ import { UpdateMenuDto } from './dto/update-menu.dto';
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) { }
 
-  // --- PUBLIC ---
   @Get()
   @ApiOperation({ summary: 'Lihat semua toko (Public)' })
   findAll() { return this.tenantsService.findAll(); }
@@ -22,15 +21,13 @@ export class TenantsController {
   findOne(@Param('id', ParseIntPipe) id: number) { return this.tenantsService.findOne(id); }
 
 
-  // --- PROTECTED (Hanya Owner/Admin) ---
-  @UseGuards(AuthGuard('jwt')) // 🔒 Wajib Login
-  @ApiBearerAuth()             // 🔑 Tombol gembok di Swagger
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: '[AUTH] Buka Toko Baru (Otomatis jadi Owner)' })
   create(@Body() data: CreateTenantDto, @Request() req) {
-    const userId = req.user.userId; // Dapat dari Token JWT
+    const userId = req.user.userId;
 
-    // Opsional: Validasi kalau dia sudah punya toko, gak boleh bikin lagi
     if (req.user.tenantId && req.user.role !== 'SUPER_ADMIN') {
       throw new UnauthorizedException("Satu akun hanya boleh memiliki satu toko!");
     }
@@ -43,8 +40,6 @@ export class TenantsController {
   @Put(':id')
   @ApiOperation({ summary: '[AUTH] Update Info Toko (Hanya Owner)' })
   update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateTenantDto, @Request() req) {
-    // CEK KEPEMILIKAN:
-    // Boleh edit JIKA: Role Super Admin ATAU TenantId di token sama dengan ID yg mau diedit
     const isOwner = req.user.tenantId === id;
     const isAdmin = req.user.role === 'SUPER_ADMIN';
 
@@ -60,7 +55,6 @@ export class TenantsController {
   @Delete(':id')
   @ApiOperation({ summary: '[AUTH] Hapus Toko (Hanya Owner)' })
   delete(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    // CEK KEPEMILIKAN
     const isOwner = req.user.tenantId === id;
     const isAdmin = req.user.role === 'SUPER_ADMIN';
 
@@ -71,19 +65,14 @@ export class TenantsController {
     return this.tenantsService.delete(id);
   }
 
-  // --- MENU MANAGEMENT ---
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @Post(':id/menus')
   @ApiOperation({ summary: '[AUTH] Tambah Menu ke Toko' })
   addMenu(@Param('id', ParseIntPipe) tenantId: number, @Body() data: CreateMenuDto, @Request() req) {
-    // VALIDASI KEPEMILIKAN:
     const user = req.user;
 
-    // 1. Cek apakah dia Super Admin?
     const isSuperAdmin = user.role === 'SUPER_ADMIN';
-
-    // 2. Cek apakah dia Owner toko INI? (tenantId di token === tenantId di URL)
     const isOwner = user.tenantId === tenantId;
 
     if (!isSuperAdmin && !isOwner) {
@@ -93,17 +82,15 @@ export class TenantsController {
     return this.tenantsService.addMenu(tenantId, data);
   }
 
-  // --- UPDATE MENU ---
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  @Put('menus/:menuId') // URL: /tenants/menus/5
+  @Put('menus/:menuId')
   @ApiOperation({ summary: '[AUTH] Update Menu (Harga, Foto, Stok)' })
   async updateMenu(
     @Param('menuId', ParseIntPipe) menuId: number,
     @Body() data: UpdateMenuDto,
     @Request() req
   ) {
-    // 1. Validasi dulu: Ini menu dia bukan?
     await this.tenantsService.validateMenuOwnership(
       menuId,
       req.user.userId,
@@ -111,17 +98,14 @@ export class TenantsController {
       req.user.role
     );
 
-    // 2. Kalau aman, baru update
     return this.tenantsService.updateMenu(menuId, data);
   }
 
-  // --- DELETE MENU ---
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  @Delete('menus/:menuId') // URL: /tenants/menus/5
+  @Delete('menus/:menuId')
   @ApiOperation({ summary: '[AUTH] Hapus Menu' })
   async deleteMenu(@Param('menuId', ParseIntPipe) menuId: number, @Request() req) {
-    // 1. Validasi dulu
     await this.tenantsService.validateMenuOwnership(
       menuId,
       req.user.userId,
@@ -129,7 +113,6 @@ export class TenantsController {
       req.user.role
     );
 
-    // 2. Hapus
     return this.tenantsService.deleteMenu(menuId);
   }
 }

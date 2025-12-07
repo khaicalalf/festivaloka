@@ -13,13 +13,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    // Fungsi ini jalan otomatis saat ada request masuk bawa token valid
     async validate(payload: any) {
         return {
             userId: payload.sub,
             email: payload.email,
             role: payload.role,
-            tenantId: payload.tenantId // Penting: Simpan ID Toko di session user
+            tenantId: payload.tenantId
         };
     }
 }
