@@ -27,7 +27,7 @@ export function DenahCard({ tenant }: Props) {
 
   return (
     <div
-      className={`relative border rounded-lg p-3 text-left w-full flex gap-3 transition
+      className={`relative border rounded-lg p-2 md:p-3 text-left w-full flex gap-2 md:gap-3 transition
       `}
     >
       {/* BADGE */}
@@ -37,7 +37,7 @@ export function DenahCard({ tenant }: Props) {
         {badgeText}
       </div>
       <div
-        className={`absolute top-2 right-2 text-[32px] px-2 py-0.5 rounded-full font-medium`}
+        className={`absolute top-2 right-2 text-[24px] md:text-[32px] px-2 py-0.5 rounded-full font-medium`}
       >
         {standCode}
       </div>

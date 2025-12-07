@@ -132,7 +132,7 @@ export function HomePage() {
       </div>
 
       {loadingTenants ? (
-        <div className="animate-pulse h-24 bg-gray-200 rounded"></div>
+        <div className="animate-pulse h-24 mb-20 bg-gray-200 rounded"></div>
       ) : (
         <TenantList
           tenants={tenants}
