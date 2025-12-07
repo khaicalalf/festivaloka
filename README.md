@@ -371,7 +371,7 @@ UNLICENSED - Private Project
 
 #### Team Leader
 - **Muhammad Ghufron Khaical Alfaris**  
-  📧 mghaiksal@gmail.com
+  📧 mghaikal@gmail.com
 
 #### Members
 - **Acmad Fadli Aditama** (profadlibae@gmail.com) - BE Developer
