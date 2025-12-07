@@ -119,7 +119,7 @@ export function OrderHistorySection() {
         </>
       )}
 
-      {history.length > 1 && (
+      {history.length > 0 && (
         <button
           onClick={() => setExpanded((x) => !x)}
           className="text-blue-600 text-sm"
