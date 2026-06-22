@@ -13,23 +13,23 @@ export function PreferenceSummary({ pref, onEdit }: Props) {
     .filter((p) => p);
 
   return (
-    <div className="border-2 border-gray-200 rounded-2xl p-5 mb-4 bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-3">
+    <div className="rounded-3xl p-5 mb-4 bg-white/40 border border-slate-200/50 shadow-xs hover:shadow-md transition-all">
+      <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🎯</span>
-          <h2 className="font-bold text-lg">Preferensi Kamu</h2>
+          <span className="text-xl">🎯</span>
+          <h2 className="font-black text-slate-800 text-sm tracking-widest uppercase">Preferensi Anda</h2>
         </div>
         <button
           onClick={onEdit}
           className="
-            text-sm bg-[#FF385C] text-white px-4 py-2 rounded-lg 
-            shadow-md hover:bg-[#E31C5F] hover:shadow-lg
-            transition-all transform hover:-translate-y-0.5
+            text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
+            text-white px-4 py-2 rounded-xl font-bold
+            shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5
             flex items-center gap-1.5
           "
         >
           <svg
-            className="w-4 h-4"
+            className="w-3.5 h-3.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -37,21 +37,20 @@ export function PreferenceSummary({ pref, onEdit }: Props) {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
+              strokeWidth={2.5}
               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
             />
           </svg>
-          Edit
+          Ubah
         </button>
       </div>
 
-      <div className="min-h-[60px]">
+      <div className="min-h-[50px]">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <div className="text-4xl mb-2 opacity-30">🍽️</div>
-            <p className="text-sm text-gray-500 italic">
-              Belum ada preferensi. Klik{" "}
-              <span className="font-semibold">Edit</span> untuk menambahkan!
+          <div className="flex flex-col items-center justify-center py-4 text-center">
+            <div className="text-3xl mb-1.5 opacity-40">🍽️</div>
+            <p className="text-xs text-slate-500 italic">
+              Belum menentukan preferensi makanan khusus.
             </p>
           </div>
         ) : (
@@ -61,20 +60,17 @@ export function PreferenceSummary({ pref, onEdit }: Props) {
                 <span
                   key={index}
                   className="
-                    inline-flex items-center gap-1.5
-                    px-3 py-1.5 rounded-lg
-                    bg-[#FF385C] text-white text-sm font-medium
-                    shadow-sm
+                    inline-flex items-center gap-1
+                    px-3 py-1.5 rounded-xl
+                    bg-amber-500/10 text-amber-700 text-xs font-bold
+                    border border-amber-200
                   "
                 >
-                  <span className="text-xs">✨</span>
+                  <span className="text-[10px]">✨</span>
                   {tag}
                 </span>
               ))}
             </div>
-            <p className="text-xs text-gray-500 pt-2 border-t border-gray-200">
-              {prefTags.length} preferensi aktif
-            </p>
           </div>
         )}
       </div>

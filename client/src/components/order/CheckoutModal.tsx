@@ -18,8 +18,8 @@ type OverlayProps = {
 
 function Overlay({ children }: OverlayProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full animate-slide-up">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-2xl max-w-lg w-full animate-slide-up overflow-hidden">
         {children}
       </div>
     </div>
@@ -54,20 +54,18 @@ export function CheckoutModal({
     <Overlay>
       <div className="flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-200">
+        <div className="px-6 py-5 border-b border-slate-100 bg-white">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-1">
+              <span className="text-[10px] font-black text-rose-500 tracking-widest uppercase">Langkah Terakhir</span>
+              <h2 className="text-xl font-black text-slate-800 mt-0.5">
                 Konfirmasi Pesanan
               </h2>
-              <p className="text-sm text-gray-600">
-                Periksa pesanan Anda sebelum melanjutkan
-              </p>
             </div>
             <button
               onClick={onClose}
               disabled={loading}
-              className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+              className="text-slate-400 hover:text-slate-650 transition-colors disabled:opacity-50"
               aria-label="Close"
             >
               <svg
@@ -79,7 +77,7 @@ export function CheckoutModal({
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
@@ -88,41 +86,27 @@ export function CheckoutModal({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1 bg-slate-50/50">
           {/* Cart Items */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              Pesanan Anda ({itemCount} item)
+          <div className="space-y-2">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              📦 Keranjang Belanja ({itemCount} item)
             </h3>
-            <div className="border border-gray-200 rounded-xl p-3 space-y-2 max-h-48 overflow-y-auto bg-gray-50">
+            <div className="border border-slate-200/80 rounded-2xl p-4 space-y-3.5 max-h-48 overflow-y-auto bg-white shadow-xs">
               {cart.map((c) => (
                 <div
                   key={c.menuItem.id}
-                  className="flex justify-between items-start text-sm"
+                  className="flex justify-between items-start text-xs text-slate-700"
                 >
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <p className="font-bold text-slate-800 truncate">
                       {c.menuItem.name}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      Rp {c.menuItem.price.toLocaleString("id-ID")} ×{" "}
-                      {c.quantity}
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                      Rp {c.menuItem.price.toLocaleString("id-ID")} × {c.quantity}
                     </p>
                   </div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-bold text-slate-800 font-mono flex-shrink-0">
                     Rp {(c.menuItem.price * c.quantity).toLocaleString("id-ID")}
                   </p>
                 </div>
@@ -131,54 +115,26 @@ export function CheckoutModal({
           </div>
 
           {/* Preferences */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-              Preferensi
+          <div className="space-y-2">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              ✍️ Catatan Preferensi Makanan
             </h3>
-            <div className="border border-gray-200 rounded-xl p-3 bg-gray-50">
-              <p className="text-sm text-gray-700 whitespace-pre-line">
-                {preferences && preferences.trim() !== ""
-                  ? preferences
-                  : "Tidak ada preferensi khusus"}
-              </p>
+            <div className="border border-slate-200/80 rounded-2xl p-4 bg-white text-xs text-slate-650 shadow-xs leading-relaxed">
+              {preferences && preferences.trim() !== ""
+                ? preferences
+                : "Tidak ada preferensi khusus."}
             </div>
           </div>
 
           {/* Contact */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              Informasi Kontak
+          <div className="space-y-3">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              👤 Kontak Pelanggan
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Email <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  Email Anda <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -186,16 +142,16 @@ export function CheckoutModal({
                   onChange={handleEmailChange}
                   placeholder="nama@email.com"
                   className="
-                    w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 text-sm
-                    focus:outline-none focus:border-black focus:ring-2 focus:ring-black/10
-                    transition-all
+                    w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400
+                    focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10
+                    transition-all shadow-inner
                   "
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  No HP / WhatsApp (Opsional)
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  Nomor HP (Opsional)
                 </label>
                 <input
                   type="tel"
@@ -203,17 +159,17 @@ export function CheckoutModal({
                   onChange={handlePhoneChange}
                   placeholder="08xxxxxxxxxx"
                   className="
-                    w-full border-2 border-gray-200 rounded-lg px-4 py-2.5 text-sm
-                    focus:outline-none focus:border-black focus:ring-2 focus:ring-black/10
-                    transition-all
+                    w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400
+                    focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10
+                    transition-all shadow-inner
                   "
                 />
               </div>
 
               {!isContactValid && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2 p-3 bg-rose-50 border border-rose-100 rounded-xl">
                   <svg
-                    className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                    className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -221,12 +177,12 @@ export function CheckoutModal({
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <p className="text-xs text-red-700">
-                    Email wajib diisi untuk melanjutkan pembayaran
+                  <p className="text-[10px] text-rose-600 font-medium">
+                    Alamat email wajib diisi untuk verifikasi transaksi pembayaran Anda.
                   </p>
                 </div>
               )}
@@ -235,11 +191,11 @@ export function CheckoutModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-          <div className="flex justify-between items-center mb-4">
+        <div className="px-6 py-5 border-t border-slate-100 bg-white">
+          <div className="flex justify-between items-center mb-5">
             <div>
-              <p className="text-sm text-gray-600">Total Pembayaran</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Total Pembayaran</span>
+              <p className="text-2xl font-black text-slate-800 font-mono mt-0.5">
                 Rp {total.toLocaleString("id-ID")}
               </p>
             </div>
@@ -250,22 +206,20 @@ export function CheckoutModal({
               onClick={onClose}
               disabled={loading}
               className="
-                flex-1 border-2 border-gray-200 py-3 rounded-lg font-semibold
-                bg-white hover:bg-gray-50 hover:border-gray-300
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-all
+                flex-1 border border-slate-200 py-3.5 rounded-2xl font-bold text-xs text-slate-500
+                bg-white hover:bg-slate-50 transition-all
               "
             >
-              Batal
+              Kembali
             </button>
 
             <button
               onClick={onConfirm}
               disabled={loading || !isContactValid}
               className="
-                flex-1 bg-[#FF385C] text-white py-3 rounded-lg font-semibold
-                shadow-lg hover:bg-[#E31C5F] hover:shadow-xl
-                disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none
+                flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest
+                shadow-lg shadow-orange-500/15 hover:from-amber-600 hover:to-orange-600
+                disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none
                 transition-all transform hover:-translate-y-0.5
                 flex items-center justify-center gap-2
               "
@@ -273,7 +227,7 @@ export function CheckoutModal({
               {loading ? (
                 <>
                   <svg
-                    className="animate-spin h-5 w-5"
+                    className="animate-spin h-4 w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                   >
@@ -291,24 +245,11 @@ export function CheckoutModal({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Mengalihkan...
+                  <span>Memproses...</span>
                 </>
               ) : (
                 <>
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  Bayar Sekarang
+                  <span>Bayar Sekarang</span>
                 </>
               )}
             </button>

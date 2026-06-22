@@ -7,59 +7,57 @@ type Props = {
 };
 
 export function TenantCard({ tenant, selected, onClick }: Props) {
-  // Badge logic - keeping original text with premium styling
+  // Cozy, humanistic badge styling
   let badgeText = "";
   let badgeStyle = "";
 
   if (tenant.isViral) {
-    badgeText = "🔥 Viral";
-    badgeStyle = "bg-rose-500/10 text-rose-400 border-rose-500/25";
+    badgeText = "🔥 Paling Viral!";
+    badgeStyle = "bg-[#E2725B] text-white border-[#C55743]";
   } else if (tenant.status === "RAMAI") {
-    badgeText = "🧑‍🍳 Banyak yang Suka";
-    badgeStyle = "bg-amber-500/10 text-amber-400 border-amber-500/25";
+    badgeText = "🧑‍🍳 Lagi Rame Nih";
+    badgeStyle = "bg-[#E5A93B] text-slate-900 border-[#C7912E]";
   } else if (tenant.status === "SEPI") {
-    badgeText = "😌 Nyaman Antre";
-    badgeStyle = "bg-indigo-500/10 text-indigo-400 border-indigo-500/25";
+    badgeText = "😌 Antrean Santai";
+    badgeStyle = "bg-[#8CA88D] text-white border-[#728E73]";
   } else {
-    badgeText = "🟢 Ayo Pesan";
-    badgeStyle = "bg-emerald-500/10 text-emerald-400 border-emerald-500/25";
+    badgeText = "🟢 Buka";
+    badgeStyle = "bg-[#8CA88D] text-white border-[#728E73]";
   }
 
   return (
     <button
       onClick={onClick}
       className={`
-        relative border rounded-3xl text-left w-full overflow-hidden
-        transition-all duration-300 transform group hover:-translate-y-1
+        relative border-2 rounded-2xl text-left w-full overflow-hidden
+        transition-all duration-200 transform
         ${
           selected
-            ? "bg-slate-900 border-rose-500 shadow-xl shadow-rose-950/20 scale-[1.01]"
-            : "bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:shadow-lg"
+            ? "bg-[#FAF6EC] border-[#E2725B] shadow-[4px_4px_0px_0px_#E2725B] translate-x-[2px] translate-y-[2px]"
+            : "bg-white border-[#E5DEC9] shadow-[4px_4px_0px_0px_#E5DEC9] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#E5DEC9]"
         }
       `}
     >
       {/* Top Banner/Image Area */}
-      <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
+      <div className="relative h-40 w-full bg-[#FAF6EC] overflow-hidden border-b-2 border-[#E5DEC9]">
         {tenant.imageUrl ? (
           <img
             src={tenant.imageUrl}
             alt={tenant.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-950 flex items-center justify-center text-slate-700">
-            <span>No Image</span>
+          <div className="w-full h-full bg-[#FAF6EC] flex items-center justify-center text-slate-400 font-medium">
+            <span>📷 Belum ada foto</span>
           </div>
         )}
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>
 
         {/* Badge - Top Left */}
         {badgeText && (
           <div
             className={`
-              absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-xl
-              border backdrop-blur-md shadow-lg
+              absolute top-3 left-3 text-[10px] font-black tracking-wider px-2.5 py-1 rounded-lg
+              border-2 shadow-xs
               ${badgeStyle}
             `}
           >
@@ -69,56 +67,31 @@ export function TenantCard({ tenant, selected, onClick }: Props) {
 
         {/* Stand Code - Bottom Left */}
         {tenant.address && (
-          <div className="absolute bottom-3 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/50 text-[10px] font-bold font-mono px-2 py-0.5 rounded text-slate-300">
-            Stand: {tenant.address}
+          <div className="absolute bottom-3 left-4 bg-white border-2 border-[#E5DEC9] text-[10px] font-bold px-2 py-0.5 rounded-lg text-slate-700">
+            ⛺ Tenda {tenant.address}
           </div>
         )}
       </div>
 
       {/* Content Area */}
       <div className="p-5 space-y-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <span className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">
-              {tenant.category}
-            </span>
-            <h3
-              className={`text-lg font-bold leading-snug mt-0.5 ${
-                selected ? "text-white" : "text-slate-100 group-hover:text-white"
-              }`}
-            >
-              {tenant.name}
-            </h3>
-          </div>
+        <div>
+          <span className="text-[10px] font-black text-[#E2725B] tracking-wider uppercase font-mono">
+            {tenant.category === "FOOD" ? "🍲 Makanan" : "🍹 Minuman"}
+          </span>
+          <h3
+            className={`text-base font-black leading-snug mt-0.5 text-slate-800`}
+          >
+            {tenant.name}
+          </h3>
         </div>
 
         {tenant.description && (
-          <p
-            className={`text-xs leading-relaxed line-clamp-2 ${
-              selected ? "text-slate-400" : "text-slate-400"
-            }`}
-          >
+          <p className="text-xs leading-relaxed text-slate-650 line-clamp-2">
             {tenant.description}
           </p>
         )}
       </div>
-
-      {/* Selection indicator */}
-      {selected && (
-        <div className="absolute top-3 right-3 bg-rose-500 text-white rounded-full p-1 shadow-lg ring-4 ring-rose-500/20">
-          <svg
-            className="w-4 h-4"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </div>
-      )}
     </button>
   );
 }

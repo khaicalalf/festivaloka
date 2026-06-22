@@ -13,9 +13,9 @@ const QUICK_PREFS = [
   { label: "Lagi viral", icon: "🔥" },
   { label: "Porsi besar", icon: "🍱" },
   { label: "Makanan ringan", icon: "🍿" },
-  { label: "Halal", icon: "✅" },
+  { label: "Halal Only", icon: "✅" },
   { label: "Makanan berat", icon: "🍛" },
-  { label: "Sate", icon: "🍢" },
+  { label: "Sate-satean", icon: "🍢" },
 ];
 
 export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
@@ -34,25 +34,25 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4 animate-fadeIn"
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center px-4 animate-fadeIn"
       onClick={onClose}
     >
       <div
-        className="space-y-5 rounded-2xl p-6 bg-white w-full max-w-lg shadow-2xl animate-slide-up"
+        className="space-y-6 rounded-[2rem] p-6 bg-white w-full max-w-lg shadow-2xl border border-slate-200/80 animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="font-bold text-xl mb-1">🎯 Preferensi Makananmu</h2>
-            <p className="text-sm text-gray-600">
-              Pilih preferensimu untuk rekomendasi yang lebih personal
+            <h2 className="font-black text-xl text-slate-800 tracking-tight">🎯 Preferensi Sajian</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Personalisasi pilihan kuliner sesuai keinginan Anda hari ini
             </p>
           </div>
           {onClose && (
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-slate-400 hover:text-slate-600 transition-colors"
               aria-label="Close"
             >
               <svg
@@ -64,7 +64,7 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
@@ -73,8 +73,8 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
         </div>
 
         {/* QUICK BUTTONS */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest block">
             Pilih Cepat
           </label>
           <div className="flex flex-wrap gap-2">
@@ -84,12 +84,12 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
                 type="button"
                 onClick={() => addQuickPref(p.label)}
                 className={`
-                  text-sm px-3 py-2 rounded-lg border-2 transition-all
-                  flex items-center gap-1.5 font-medium
+                  text-xs px-3.5 py-2.5 rounded-xl border transition-all
+                  flex items-center gap-1.5 font-bold
                   ${
                     isSelected(p.label)
-                      ? "bg-[#FF385C] text-white border-[#FF385C] shadow-md scale-105"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:shadow-sm"
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-md shadow-orange-500/10 scale-105"
+                      : "bg-slate-50 text-slate-650 border-slate-200 hover:border-slate-350 hover:bg-slate-100/50"
                   }
                 `}
               >
@@ -101,18 +101,17 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
         </div>
 
         {/* TEXTAREA */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest block">
             Atau Tulis Manual
           </label>
           <textarea
-            className="border-2 border-gray-200 rounded-lg px-4 py-3 w-full resize-none focus:outline-none focus:border-[#FF385C] focus:ring-2 focus:ring-[#FF385C]/10 transition-all"
+            className="w-full bg-slate-50 border border-slate-200 focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 rounded-2xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none transition-all resize-none shadow-inner"
             rows={3}
             value={value}
             placeholder="Contoh: suka pedas, mau yang cepat, minuman manis..."
             onChange={(e) => onChange(e.target.value)}
           />
-          <p className="text-xs text-gray-500 mt-1">{value.length} karakter</p>
         </div>
 
         {/* BUTTONS */}
@@ -122,9 +121,9 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
             onClick={onSubmit}
             disabled={!value.trim()}
             className="
-              flex-1 bg-[#FF385C] text-white py-3 rounded-lg font-semibold
-              shadow-lg hover:bg-[#E31C5F] hover:shadow-xl
-              disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none
+              flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-650
+              text-white py-3.5 rounded-2xl font-bold
+              shadow-lg shadow-orange-500/15 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none
               transition-all transform hover:-translate-y-0.5
             "
           >
@@ -136,8 +135,8 @@ export function PreferenceForm({ value, onChange, onSubmit, onClose }: Props) {
               type="button"
               onClick={onClose}
               className="
-                px-6 border-2 border-gray-200 py-3 rounded-lg font-semibold
-                bg-white hover:bg-gray-50 hover:border-gray-300 transition-all
+                px-5 border border-slate-200 py-3.5 rounded-2xl font-bold text-xs text-slate-500
+                bg-white hover:bg-slate-50 transition-all
               "
             >
               Batal
