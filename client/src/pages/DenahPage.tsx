@@ -8,6 +8,7 @@ export function DenahPage() {
   const [loading, setLoading] = useState(true);
   const [selectedStand, setSelectedStand] = useState<Tenant | null>(null);
   const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const isOffline = getIsMockMode();
 
   useEffect(() => {
@@ -62,233 +63,404 @@ export function DenahPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F0] flex items-center justify-center text-slate-800">
+      <div className="min-h-screen bg-[#E1E8EB] flex items-center justify-center text-slate-800">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-[#E2725B] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="w-12 h-12 border-4 border-slate-800 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-sm font-bold text-slate-500 animate-pulse">Membuka Peta Bazaar...</p>
         </div>
       </div>
     );
   }
 
-  // Cozy pastel highlights
-  const zoneColors: Record<string, { bg: string; text: string; border: string; activeShadow: string }> = {
-    "Zone A": { bg: "bg-[#FDF3F0]", text: "text-[#E2725B]", border: "border-[#F5C9BD]", activeShadow: "shadow-[#E2725B]/10" },
-    "Zone B": { bg: "bg-[#F6F3FB]", text: "text-[#8A6FB9]", border: "border-[#D6CAEB]", activeShadow: "shadow-[#8A6FB9]/10" },
-    "Zone C": { bg: "bg-[#EBF7F2]", text: "text-[#4A9E7A]", border: "border-[#AEDEC8]", activeShadow: "shadow-[#4A9E7A]/10" }
+  // Cozy minimalist theme definitions
+  const zoneColors: Record<string, { bg: string; text: string; border: string; activeShadow: string; activeBorder: string; hoverBg: string }> = {
+    "Zone A": { bg: "bg-stone-50", text: "text-stone-600", border: "border-stone-200", activeBorder: "border-slate-850", activeShadow: "shadow-slate-800/10", hoverBg: "hover:bg-stone-100/50" },
+    "Zone B": { bg: "bg-slate-50", text: "text-slate-650", border: "border-slate-200", activeBorder: "border-slate-850", activeShadow: "shadow-slate-800/10", hoverBg: "hover:bg-slate-100/50" },
+    "Zone C": { bg: "bg-zinc-50", text: "text-zinc-650", border: "border-zinc-200", activeBorder: "border-slate-850", activeShadow: "shadow-slate-800/10", hoverBg: "hover:bg-zinc-100/50" }
   };
 
+  // Stalls filtering
+  const filteredTenants = tenants.filter((t) => {
+    const zone = getStandZone(t);
+    const matchesZone = !activeZone || zone === activeZone;
+    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getStandCode(t).toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesZone && matchesSearch;
+  });
+
   return (
-    <div className="min-h-screen bg-[#FAF7F0] text-slate-800 flex flex-col font-sans selection:bg-amber-500/20 relative overflow-hidden">
+    <div className="h-screen w-screen bg-[#E1E8EB] flex justify-center items-center font-sans overflow-hidden p-0 lg:p-4 text-slate-800">
       
-      {/* Top Header */}
-      <header className="border-b-4 border-[#EADFC9] bg-white sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 flex items-center gap-2">
-                  <span className="text-2xl">🎪</span>
-                  Peta Bazaar Festivaloka
-                </h1>
-                {isOffline && (
-                  <span className="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-800 border-2 border-amber-500/20">
-                    Mode Demo
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Biar gak nyasar, yuk cek letak tenda dan stan bazaar kuliner hari ini!
-              </p>
-            </div>
+      {/* Three-Pane Container */}
+      <div className="w-full h-full lg:h-[95vh] lg:w-[95vw] lg:max-w-[1396px] bg-[#f0f2f5] lg:rounded-2xl lg:shadow-2xl flex overflow-hidden border border-slate-200/50 relative">
+        
+        {/* ==============================================
+            PANEL 1: LEFT SIDEBAR (Stall directory list)
+           ============================================== */}
+        <aside className="w-full sm:w-[350px] lg:w-[320px] flex-shrink-0 border-r border-slate-200 flex flex-col bg-white h-full z-20">
+          
+          {/* Header with back button */}
+          <div className="h-[60px] bg-[#f0f2f5] px-4 flex items-center gap-3 flex-shrink-0 border-b border-slate-200">
             <Link
               to="/"
-              className="px-5 py-2.5 bg-[#E2725B] hover:bg-[#C55743] border-2 border-[#C55743] text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#A53D2A] transition-all duration-200 flex items-center gap-2"
+              className="p-1.5 rounded-full hover:bg-slate-250 text-slate-650 transition active:scale-90"
+              title="Kembali ke Beranda"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>Beranda</span>
             </Link>
+            <div className="min-w-0">
+              <h3 className="font-extrabold text-[15px] tracking-tight text-slate-850">
+                Peta & Lokasi Stan
+              </h3>
+              <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">
+                Festivaloka Guide Map
+              </p>
+            </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Grid Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 z-10 relative">
-        
-        {/* Left Column: Interactive Map Grid (Span 2) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Map Filters */}
-          <div className="bg-white border-2 border-[#E5DEC9] rounded-3xl p-5 flex flex-wrap gap-3 items-center justify-between shadow-[4px_4px_0px_0px_#E5DEC9]">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-400">Filter Blok Kuliner:</span>
-            <div className="flex flex-wrap gap-2">
+          {/* Search bar inputs */}
+          <div className="p-3 bg-white border-b border-slate-100 space-y-2">
+            <div className="relative flex items-center bg-[#f0f2f5] rounded-xl px-3 py-1.5 border border-transparent focus-within:border-slate-200 focus-within:bg-white transition shadow-inner-sm">
+              <span className="text-slate-400 mr-2 flex-shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari stan atau tenda..."
+                className="w-full bg-transparent border-none text-xs text-slate-800 placeholder-slate-450 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-slate-400 hover:text-slate-650 ml-1.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Zone pills filters */}
+            <div className="flex gap-1 overflow-x-auto pb-1 custom-scrollbar">
               <button
                 onClick={() => setActiveZone(null)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide transition flex-shrink-0 border ${
                   !activeZone
-                    ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                    : "bg-slate-100 border-transparent text-slate-600 hover:bg-[#FAF6EC]"
+                    ? "bg-slate-900 text-white border-slate-950 shadow-xs"
+                    : "bg-[#f0f2f5] text-slate-600 border-transparent hover:bg-slate-200"
                 }`}
               >
-                🎪 Semua Blok
+                🎪 Semua
               </button>
               <button
                 onClick={() => setActiveZone("Zone A")}
-                className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide transition flex-shrink-0 border ${
                   activeZone === "Zone A"
-                    ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                    : "bg-slate-100 border-transparent text-slate-600 hover:bg-[#FAF6EC]"
+                    ? "bg-slate-900 text-white border border-slate-950 shadow-xs"
+                    : "bg-[#f0f2f5] text-slate-600 border-transparent hover:bg-slate-200"
                 }`}
               >
-                Blok Gurih 🍢
+                Gurih 🍢
               </button>
               <button
                 onClick={() => setActiveZone("Zone B")}
-                className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide transition flex-shrink-0 border ${
                   activeZone === "Zone B"
-                    ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                    : "bg-slate-100 border-transparent text-slate-600 hover:bg-[#FAF6EC]"
+                    ? "bg-slate-900 text-white border border-slate-950 shadow-xs"
+                    : "bg-[#f0f2f5] text-slate-600 border-transparent hover:bg-slate-200"
                 }`}
               >
-                Blok Kenyang 🍛
+                Kenyang 🍛
               </button>
               <button
                 onClick={() => setActiveZone("Zone C")}
-                className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all ${
+                className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide transition flex-shrink-0 border ${
                   activeZone === "Zone C"
-                    ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                    : "bg-slate-100 border-transparent text-slate-600 hover:bg-[#FAF6EC]"
+                    ? "bg-slate-900 text-white border border-slate-950 shadow-xs"
+                    : "bg-[#f0f2f5] text-slate-600 border-transparent hover:bg-slate-200"
                 }`}
               >
-                Blok Segar 🍹
+                Segar 🍹
               </button>
             </div>
           </div>
 
-          {/* Visual Interactive Map Floor Plan */}
-          <div className="bg-white border-2 border-[#E5DEC9] rounded-[2rem] p-6 shadow-[4px_4px_0px_0px_#E5DEC9] relative">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xs font-black tracking-widest uppercase text-slate-400 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-[#E2725B] rounded-full animate-ping"></span>
-                Peta Penataan Tenda Bazaar
-              </h2>
-            </div>
-
-            {/* Grid Layout representing the food court stands */}
-            <div className="grid grid-cols-3 gap-5 border-2 border-[#E5DEC9] bg-[#FCFBF7] p-5 sm:p-6 rounded-[2rem] min-h-[300px]">
-              
-              {tenants.map((t) => {
+          {/* List layout */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 bg-white">
+            {!filteredTenants.length ? (
+              <div className="p-6 text-center text-slate-400 space-y-1">
+                <span className="text-3xl block">🗺️</span>
+                <p className="text-xs font-bold">Stan tidak ditemukan</p>
+              </div>
+            ) : (
+              filteredTenants.map((t) => {
                 const zone = getStandZone(t);
-                const code = getStandCode(t);
-                const isSelected = selectedStand?.id === t.id;
                 const colors = zoneColors[zone];
-                const isFilteredOut = activeZone && zone !== activeZone;
+                const isSelected = selectedStand?.id === t.id;
 
                 return (
                   <button
                     key={t.id}
                     onClick={() => setSelectedStand(t)}
-                    disabled={!!isFilteredOut}
-                    className={`
-                      relative rounded-2xl p-4 border-2 text-left flex flex-col justify-between min-h-[100px] sm:min-h-[115px]
-                      transition-all duration-200 transform
-                      ${isFilteredOut ? "opacity-15 cursor-not-allowed border-slate-100 bg-transparent shadow-none" : "hover:translate-x-[2px] hover:translate-y-[2px]"}
-                      ${isSelected 
-                        ? `${colors.bg} ${colors.border} shadow-[4px_4px_0px_0px_#E2725B] scale-[1.01] border-[#E2725B]`
-                        : "bg-white border-[#E5DEC9] shadow-[2px_2px_0px_0px_#E5DEC9] hover:shadow-[1px_1px_0px_0px_#E5DEC9]"
-                      }
-                    `}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all relative ${
+                      isSelected ? "bg-slate-50" : "hover:bg-slate-50/50"
+                    }`}
                   >
-                    {/* Stand Label */}
-                    <div className="flex justify-between items-start w-full">
-                      <span className={`text-[9px] font-black font-mono px-2 py-0.5 rounded-lg border-2 ${
-                        isSelected ? `bg-white border-[#E2725B] ${colors.text}` : "bg-slate-50 border-[#E5DEC9] text-slate-600"
-                      }`}>
-                        {code}
-                      </span>
-                      <span className={`text-[9px] uppercase font-black tracking-wider ${
-                        t.status === "RAMAI" ? "text-rose-500" : "text-slate-500"
-                      }`}>
-                        {t.status === "RAMAI" ? "🔥 Rame" : "Buka"}
-                      </span>
-                    </div>
-
-                    {/* Stand Name */}
-                    <div className="mt-3">
-                      <p className={`text-xs sm:text-sm font-black truncate text-slate-800`}>
-                        {t.name}
-                      </p>
-                      <p className="text-[9px] text-[#8B5A2B] font-bold mt-0.5 truncate uppercase tracking-wider font-mono">
+                    {isSelected && (
+                      <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-slate-900"></div>
+                    )}
+                    <div className="min-w-0 flex-1 pr-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="font-semibold text-xs text-slate-800 truncate">
+                          {t.name}
+                        </h4>
+                        {t.isViral && (
+                          <span className="text-[8px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-100 uppercase flex-shrink-0">
+                            Viral
+                          </span>
+                        )}
+                        {t.status === "RAMAI" && (
+                          <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1 py-0.2 rounded border border-amber-100 uppercase flex-shrink-0">
+                            Rame
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-[10px] mt-0.5 font-bold uppercase ${colors.text}`}>
                         {getZoneFriendlyName(zone)}
                       </p>
                     </div>
+                    <span className={`text-[10px] font-bold font-mono px-2 py-0.5 border rounded-lg ${colors.bg} ${colors.border} ${colors.text}`}>
+                      {getStandCode(t)}
+                    </span>
                   </button>
                 );
-              })}
-
-            </div>
-
-            {/* Pedestrian path */}
-            <div className="mt-5 p-4 border-2 border-dashed border-[#E5DEC9] rounded-2xl bg-white/50 text-center flex items-center justify-center gap-2">
-              <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest font-mono">🚶 Lorong Pejalan Kaki Bazaar</span>
-            </div>
+              })
+            )}
           </div>
-        </div>
+        </aside>
 
-        {/* Right Column: Selected Stand Detail */}
-        <div className="space-y-6 animate-fade-in" style={{ animationDelay: "0.15s" }}>
-          <div className="bg-white border-2 border-[#E5DEC9] rounded-[2rem] p-6 shadow-[4px_4px_0px_0px_#E5DEC9] sticky top-24 space-y-6">
-            {selectedStand ? (
-              <>
-                <div className="space-y-4">
-                  {/* Stand Image */}
-                  <div className="relative rounded-2xl overflow-hidden aspect-video border-2 border-[#E5DEC9] bg-[#FAF6EC]">
-                    {selectedStand.imageUrl ? (
-                      <img
-                        src={selectedStand.imageUrl}
-                        alt={selectedStand.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-450 font-bold bg-[#FAF6EC]">
-                        📷 Belum ada foto
+        {/* ==============================================
+            PANEL 2: CENTER AREA (Interactive floor map grid)
+           ============================================== */}
+        <section className="flex-1 h-full flex flex-col bg-[#efeae2] relative overflow-hidden">
+          
+          {/* Header Panel */}
+          <div className="h-[60px] bg-[#f0f2f5] px-4 flex items-center justify-between flex-shrink-0 border-b border-slate-200 z-10 shadow-sm">
+            <div>
+              <h3 className="font-semibold text-sm text-slate-800 leading-snug">Denah Lokasi Bazaar Live</h3>
+              <p className="text-[10px] text-slate-500 font-medium">
+                Peta interaktif penataan stand kuliner
+              </p>
+            </div>
+            {isOffline && (
+              <span className="text-[9px] font-bold text-amber-800 bg-amber-500/10 px-2 py-0.5 border border-amber-500/20 rounded-md uppercase">
+                Demo
+              </span>
+            )}
+          </div>
+
+          {/* Interactive Map Layout grid with wallpaper */}
+          <div className="flex-1 overflow-y-auto whatsapp-bg p-4 sm:p-6 flex flex-col justify-center items-center custom-scrollbar">
+            
+            {/* Visual Grid Container */}
+            <div className="w-full max-w-2xl bg-white/95 border border-slate-200/60 rounded-[2rem] p-5 sm:p-6 shadow-md space-y-5 animate-fade-in backdrop-blur-md">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span className="text-[10px] font-black tracking-widest uppercase text-slate-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-slate-800 rounded-full animate-ping"></span>
+                  Pilih stan pada peta untuk melihat detail
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold font-mono">PINTU UTAMA ➡️</span>
+              </div>
+
+              {/* Stands Layout grid representation */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 min-h-[300px]">
+                {tenants.map((t) => {
+                  const zone = getStandZone(t);
+                  const code = getStandCode(t);
+                  const isSelected = selectedStand?.id === t.id;
+                  const colors = zoneColors[zone];
+                  const isFilteredOut = activeZone && zone !== activeZone;
+
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedStand(t)}
+                      disabled={!!isFilteredOut}
+                      className={`
+                        relative rounded-xl p-3.5 border text-left flex flex-col justify-between min-h-[90px] sm:min-h-[105px]
+                        transition-all duration-200 transform outline-none
+                        ${isFilteredOut ? "opacity-10 cursor-not-allowed border-slate-100 bg-transparent shadow-none" : `hover:scale-102 ${colors.hoverBg}`}
+                        ${isSelected 
+                          ? `${colors.bg} ${colors.activeBorder} border-2 shadow-md ${colors.activeShadow}`
+                          : "bg-white border-slate-200 shadow-2xs hover:shadow-sm"
+                        }
+                      `}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${
+                          isSelected ? `bg-white ${colors.activeBorder} ${colors.text}` : "bg-slate-50 border-slate-200 text-slate-550"
+                        }`}>
+                          {code}
+                        </span>
+                        <span className="text-[8px] font-black uppercase text-slate-400">
+                          {t.status === "RAMAI" ? "🔥" : "🟢"}
+                        </span>
                       </div>
-                    )}
-                    <div className="absolute top-3 left-3 bg-[#E2725B] text-white border border-[#C55743] px-3 py-1.5 rounded-xl font-bold font-mono text-xs shadow-lg">
-                      ⛺ TENDA {getStandCode(selectedStand)}
-                    </div>
-                  </div>
 
-                  {/* Stand Details */}
-                  <div>
-                    <span className="text-[10px] font-black text-[#E2725B] tracking-wider uppercase font-mono">
-                      {getZoneFriendlyName(getStandZone(selectedStand))}
-                    </span>
-                    <h2 className="text-xl font-black text-slate-800 mt-1">
-                      {selectedStand.name}
-                    </h2>
-                    <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-                      {selectedStand.description}
-                    </p>
+                      <div className="mt-2.5">
+                        <h4 className="text-xs font-black truncate text-slate-800">
+                          {t.name}
+                        </h4>
+                        <p className="text-[8px] font-bold text-slate-400 mt-0.5 truncate uppercase tracking-wider">
+                          {getZoneFriendlyName(zone)}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Pedestrian passage label */}
+              <div className="p-3 border border-dashed border-slate-200 rounded-xl bg-slate-50/50 text-center flex items-center justify-center gap-1.5">
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest font-mono">🚶 Jalur Pengunjung Bazaar Utama</span>
+              </div>
+            </div>
+
+            {/* Responsive details button for Mobile/Tablet */}
+            {selectedStand && (
+              <button
+                onClick={() => {
+                  // Toggle drawer overlay display on mobile
+                  const drawer = document.getElementById("detail-drawer");
+                  if (drawer) drawer.classList.remove("translate-x-full");
+                }}
+                className="lg:hidden mt-4 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <span>Lihat Detail Menu</span>
+                <span>➔</span>
+              </button>
+            )}
+
+          </div>
+
+          {/* Footer guides */}
+          <div className="bg-[#f0f2f5] py-3 text-center border-t border-slate-200 text-[10px] text-slate-400 font-medium">
+            Festivaloka Map Guide &copy; {new Date().getFullYear()}.
+          </div>
+        </section>
+
+        {/* ==============================================
+            PANEL 3: RIGHT DRAWER (Stall detail - Contact Info style)
+           ============================================== */}
+        <aside
+          id="detail-drawer"
+          className={`
+            fixed lg:relative inset-y-0 right-0 w-full sm:w-[350px] lg:w-[340px] flex-shrink-0 bg-white border-l border-slate-200 flex flex-col h-full z-30
+            transition-transform duration-300 lg:translate-x-0
+            ${selectedStand ? "translate-x-0" : "translate-x-full lg:hidden"}
+          `}
+        >
+          {selectedStand ? (
+            <>
+              {/* Drawer Header */}
+              <div className="h-[60px] bg-[#f0f2f5] px-4 flex items-center justify-between flex-shrink-0 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  {/* Close drawer button on Mobile */}
+                  <button
+                    onClick={() => {
+                      const drawer = document.getElementById("detail-drawer");
+                      if (drawer) drawer.classList.add("translate-x-full");
+                    }}
+                    className="lg:hidden p-1 rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <h3 className="font-extrabold text-[14px] text-slate-850">
+                    Detail Stan Bazaar
+                  </h3>
+                </div>
+                {/* Close Stand selection */}
+                <button
+                  onClick={() => setSelectedStand(null)}
+                  className="p-1 rounded-full hover:bg-slate-200 text-slate-450 hover:text-slate-650 transition-colors"
+                  title="Tutup detail"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+                
+                {/* Visual Image */}
+                <div className="relative rounded-2xl overflow-hidden aspect-video border border-slate-200 bg-slate-50">
+                  {selectedStand.imageUrl ? (
+                    <img
+                      src={selectedStand.imageUrl}
+                      alt={selectedStand.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold bg-[#FAF6EC] text-xs">
+                      📷 Belum ada foto stan
+                    </div>
+                  )}
+                  <div className="absolute top-2.5 left-2.5 bg-slate-900 text-white border border-slate-950 px-2.5 py-1 rounded-lg font-bold font-mono text-[10px] shadow-sm">
+                    ⛺ TENDA {getStandCode(selectedStand)}
                   </div>
                 </div>
 
-                <hr className="border-[#E5DEC9]" />
+                {/* Stall Description details */}
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase font-mono">
+                    {getZoneFriendlyName(getStandZone(selectedStand))}
+                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-base font-extrabold text-slate-800 leading-snug">
+                      {selectedStand.name}
+                    </h4>
+                    {selectedStand.isViral && (
+                      <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase">
+                        Viral
+                      </span>
+                    )}
+                    {selectedStand.status === "RAMAI" && (
+                      <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 uppercase">
+                        Rame
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">
+                    {selectedStand.description || "Mari kunjungi stan kami untuk menikmati sajian kuliner yang lezat dan otentik!"}
+                  </p>
+                </div>
 
-                {/* Specialty Menus Preview */}
-                <div className="space-y-3">
-                  <h3 className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                    Papan Menu Stan:
-                  </h3>
-                  <div className="space-y-2.5 max-h-[190px] overflow-y-auto pr-1">
+                <hr className="border-slate-100" />
+
+                {/* Stall Menu Board list */}
+                <div className="space-y-2.5">
+                  <h5 className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                    📋 Papan Menu Stan:
+                  </h5>
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
                     {selectedStand.menus.map((menu) => (
-                      <div key={menu.id} className="flex justify-between items-center p-3 rounded-xl bg-[#FAF7F0]/55 border-2 border-[#EADFC9]/70">
-                        <div>
-                          <p className="text-xs font-black text-slate-800">{menu.name}</p>
-                          <p className="text-[10px] text-slate-500 line-clamp-1">{menu.description}</p>
+                      <div key={menu.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/50 flex justify-between items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{menu.name}</p>
+                          <p className="text-[9px] text-slate-450 line-clamp-1 mt-0.5">{menu.description}</p>
                         </div>
-                        <span className="text-xs font-mono font-bold text-emerald-600 flex-shrink-0">
+                        <span className="text-xs font-mono font-bold text-slate-800 flex-shrink-0">
                           Rp {menu.price.toLocaleString("id-ID")}
                         </span>
                       </div>
@@ -297,30 +469,26 @@ export function DenahPage() {
                 </div>
 
                 {/* Call-to-action button */}
-                <Link
-                  to="/"
-                  className="block text-center w-full py-4 bg-[#E2725B] hover:bg-[#C55743] border-2 border-[#C55743] text-white rounded-2xl font-bold shadow-lg shadow-orange-500/10 transition-all duration-300 transform hover:-translate-y-0.5"
-                >
-                  Pesan Sekarang dari Stand Ini
-                </Link>
-              </>
-            ) : (
-              <div className="text-center py-16 text-slate-400">
-                <span className="text-4xl block mb-3">📍</span>
-                Pilih salah satu stan di peta untuk melihat detail.
+                <div className="pt-2">
+                  <Link
+                    to={`/?tenantId=${selectedStand.id}`}
+                    className="block text-center w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                  >
+                    Jajan Sekarang 🛒
+                  </Link>
+                </div>
+
               </div>
-            )}
-          </div>
-        </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-450 space-y-2">
+              <span className="text-4xl">📍</span>
+              <p className="text-xs">Pilih stan di peta untuk melihat menu lengkap.</p>
+            </div>
+          )}
+        </aside>
 
-      </main>
-
-      {/* Footer Info */}
-      <footer className="bg-white border-t-4 border-[#EADFC9] py-6 mt-12 z-10 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-400">
-          Festivaloka Guide Map &copy; {new Date().getFullYear()}. Designed for Local Bazaar.
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

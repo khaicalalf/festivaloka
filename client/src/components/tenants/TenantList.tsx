@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Tenant } from "../../types";
-import { TenantCard } from "./TenantCard";
+import { TenantRow } from "./TenantRow";
 
 type Props = {
   tenants: Tenant[];
@@ -28,13 +28,12 @@ export function TenantList({
   });
 
   return (
-    <div className="space-y-6">
-      {/* Search & Category Filter Section */}
-      <div className="space-y-4">
-        {/* Search Input */}
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="h-full flex flex-col bg-white">
+      {/* Search Input Bar (WhatsApp style) */}
+      <div className="p-3 bg-white space-y-2">
+        <div className="relative flex items-center bg-[#F0F2F5] rounded-xl px-3 py-2 border border-transparent focus-within:border-slate-200 focus-within:bg-white transition-all shadow-inner-sm">
+          <span className="text-slate-400 mr-2 flex-shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </span>
@@ -42,101 +41,90 @@ export function TenantList({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari camilan, kopi, sate, atau nama stan..."
-            className="w-full bg-[#FCFBF7] border-2 border-[#E5DEC9] focus:border-[#E2725B] rounded-2xl pl-12 pr-10 py-3.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-xs"
+            placeholder="Cari jajanan, kopi, sate, atau tenda..."
+            className="w-full bg-transparent border-none text-sm text-slate-800 placeholder-slate-450 focus:outline-none"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-650"
+              className="text-slate-400 hover:text-slate-650 ml-1.5"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
 
-        {/* Category Pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {/* Category Pills (WhatsApp Chat Filter style) */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
           <button
             onClick={() => setActiveCategory("ALL")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1 flex-shrink-0 ${
               activeCategory === "ALL"
-                ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                : "bg-white border-[#E5DEC9] text-slate-600 hover:bg-[#FAF6EC]"
+                ? "bg-slate-900 text-white border border-slate-950 shadow-xs"
+                : "bg-[#F0F2F5] text-slate-600 hover:bg-slate-200/60"
             }`}
           >
-            🎪 Semua Stan Jajanan
+            🎪 Semua Stan
           </button>
           <button
             onClick={() => setActiveCategory("FOOD")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1 flex-shrink-0 ${
               activeCategory === "FOOD"
-                ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                : "bg-white border-[#E5DEC9] text-slate-600 hover:bg-[#FAF6EC]"
+                ? "bg-slate-900 text-white border border-slate-950 shadow-xs"
+                : "bg-[#F0F2F5] text-slate-600 hover:bg-slate-200/60"
             }`}
           >
-            🍲 Makanan Berat & Camilan
+            🍲 Makanan
           </button>
           <button
             onClick={() => setActiveCategory("DRINK")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black border-2 transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1 flex-shrink-0 ${
               activeCategory === "DRINK"
-                ? "bg-[#E2725B] text-white border-[#C55743] shadow-[2px_2px_0px_0px_#C55743]"
-                : "bg-white border-[#E5DEC9] text-slate-600 hover:bg-[#FAF6EC]"
+                ? "bg-slate-900 text-white border border-slate-950 shadow-xs"
+                : "bg-[#F0F2F5] text-slate-600 hover:bg-slate-200/60"
             }`}
           >
-            🍹 Minuman Segar
+            🍹 Minuman
           </button>
         </div>
       </div>
 
-      {/* Grid of Tenants */}
-      {!filtered.length ? (
-        <div className="text-center py-16 border-2 border-dashed border-[#E5DEC9] rounded-2xl bg-[#FCFBF7]">
-          <div className="text-5xl mb-4 opacity-55">🎪</div>
-          <h3 className="text-sm font-bold text-slate-700">Stan makanan belum ketemu nih</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-            Coba tulis kata kunci lain atau ubah kategori jajananmu di atas.
-          </p>
-          {(searchQuery || activeCategory !== "ALL") && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setActiveCategory("ALL");
-              }}
-              className="mt-4 text-xs font-black text-[#E2725B] hover:text-[#C55743] underline"
-            >
-              Ulangi Pencarian & Filter
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black tracking-widest text-slate-400 uppercase">
-              Stan Bazaar Terbuka ({filtered.length})
-            </h2>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-            {filtered.map((tenant, index) => (
-              <div
-                key={tenant.id}
-                style={{ animationDelay: `${index * 0.05}s` }}
-                className="animate-fade-in"
+      {/* List of Tenants / Chat threads */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+        {!filtered.length ? (
+          <div className="text-center py-12 px-4 space-y-2">
+            <div className="text-4xl opacity-40">🎪</div>
+            <h4 className="text-sm font-bold text-slate-650">Stan tidak ditemukan</h4>
+            <p className="text-xs text-slate-450 max-w-xs mx-auto">
+              Coba gunakan kata kunci pencarian yang lain atau ganti filter kategori di atas.
+            </p>
+            {(searchQuery || activeCategory !== "ALL") && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategory("ALL");
+                }}
+                className="text-xs font-bold text-[#2E7D32] hover:underline pt-2 block mx-auto"
               >
-                <TenantCard
-                  tenant={tenant}
-                  onClick={() => onSelectTenant(tenant)}
-                  selected={tenant.id === selectedTenantId}
-                />
-              </div>
+                Reset Pencarian
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100/50">
+            {filtered.map((tenant) => (
+              <TenantRow
+                key={tenant.id}
+                tenant={tenant}
+                onClick={() => onSelectTenant(tenant)}
+                selected={tenant.id === selectedTenantId}
+              />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
