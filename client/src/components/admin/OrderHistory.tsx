@@ -19,6 +19,9 @@ export function OrderHistory({ tenantId }: { tenantId: number | string }) {
 
   useEffect(() => {
     void loadData();
+    // Auto refresh dashboard queues every 5 seconds for a dynamic live experience
+    const interval = setInterval(() => loadData(), 5000);
+    return () => clearInterval(interval);
   }, [loadData]);
 
   const handleCall = async (queueId: number) => {
@@ -28,80 +31,101 @@ export function OrderHistory({ tenantId }: { tenantId: number | string }) {
       await loadData();
     } catch (e) {
       console.error(e);
-      alert("Gagal mengupdate status.");
+      alert("Gagal memanggil antrean.");
     } finally {
       setProcessingId(null);
     }
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur rounded-xl shadow-lg p-6 border border-gray-100">
-      <h3 className="text-xl font-bold text-gray-900 border-b pb-3 mb-4">
-        Riwayat Order / Antrian Tenant
-      </h3>
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+      <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-5">
+        <h3 className="text-lg font-black text-white flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+          Antrean Order Live Stan
+        </h3>
+        <button 
+          onClick={loadData}
+          className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300"
+        >
+          🔄 Refresh
+        </button>
+      </div>
 
-      {loading ? (
-        <p className="text-gray-500 animate-pulse">Memuat data…</p>
+      {loading && queues.length === 0 ? (
+        <p className="text-sm text-slate-500 animate-pulse text-center py-6">Memuat antrean aktif...</p>
       ) : queues.length === 0 ? (
-        <p className="text-gray-500">Belum ada transaksi.</p>
+        <div className="text-center py-10 border border-dashed border-slate-800 rounded-2xl bg-slate-950/30">
+          <p className="text-4xl mb-2">🧑‍🍳</p>
+          <h4 className="text-xs font-bold text-slate-400">Belum Ada Antrean Masuk</h4>
+          <p className="text-[10px] text-slate-650 mt-0.5">Transaksi pelanggan baru akan otomatis muncul di sini</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
           {queues.map((q) => (
             <div
               key={q.id}
-              className="p-4 bg-gray-50 rounded-lg border shadow-sm"
+              className="p-4 bg-slate-950 border border-slate-800/80 rounded-2xl space-y-3 relative overflow-hidden"
             >
               {/* Header */}
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-semibold text-gray-900">
-                    Antrian: {q.number}
+                  <p className="text-sm font-bold text-slate-200">
+                    Antrian: <span className="text-rose-500 font-mono text-base font-black">#{q.number}</span>
                   </p>
-                  <p className="text-xs text-gray-500">Order ID: {q.orderId}</p>
+                  <p className="text-[10px] text-slate-550 font-mono mt-0.5">ID: {q.orderId}</p>
                 </div>
 
                 <span
-                  className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                  className={`px-3 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider border ${
                     q.status === "WAITING"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : q.status === "CALLED"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-green-100 text-green-800"
+                      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                      : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
                   }`}
                 >
-                  {q.status}
+                  {q.status === "WAITING" ? "Antre Masak" : "Sudah Dipanggil"}
                 </span>
               </div>
 
               {/* Items */}
-              <div className="mt-3 space-y-1 text-sm text-gray-700">
+              <div className="space-y-1.5 text-xs text-slate-400 border-t border-b border-slate-900 py-3">
                 {q.order.items.map((item, i) => (
-                  <p key={i}>
-                    {item.qty}× {item.name} — Rp{item.price.toLocaleString()}
-                  </p>
+                  <div key={i} className="flex justify-between">
+                    <span>
+                      {item.name} <span className="text-slate-600 font-mono text-[10px]">x {item.qty}</span>
+                    </span>
+                    <span className="font-mono text-slate-300">Rp {(item.price * item.qty).toLocaleString()}</span>
+                  </div>
                 ))}
               </div>
 
-              {/* Total */}
-              <p className="font-semibold text-indigo-600 mt-2">
-                Total: Rp{q.order.totalAmount.toLocaleString("id-ID")}
-              </p>
+              {/* Footer Total */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] text-slate-500">Total Transaksi:</p>
+                  <p className="text-sm font-bold text-emerald-400 font-mono">
+                    Rp {q.order.totalAmount.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                
+                {/* Actions */}
+                {q.status === "WAITING" ? (
+                  <button
+                    onClick={() => handleCall(q.id)}
+                    disabled={processingId === q.id}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-rose-950/20"
+                  >
+                    {processingId === q.id ? "Memproses..." : "Panggil Pelanggan"}
+                  </button>
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-500 italic">Antrean Siap Diambil</span>
+                )}
+              </div>
 
-              {/* Customer */}
-              <p className="text-xs text-gray-500 mt-1">
-                Email: {q.order.customer.email}
-              </p>
-
-              {/* Action */}
-              {q.status === "WAITING" && (
-                <button
-                  onClick={() => handleCall(q.id)}
-                  disabled={processingId === q.id}
-                  className="mt-3 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-400"
-                >
-                  {processingId === q.id ? "Memproses..." : "Panggil"}
-                </button>
-              )}
+              {/* Customer Contact */}
+              <div className="text-[10px] text-slate-600 pt-1">
+                Pelanggan: {q.order.customer.email} {q.order.customer.phone && `(${q.order.customer.phone})`}
+              </div>
             </div>
           ))}
         </div>

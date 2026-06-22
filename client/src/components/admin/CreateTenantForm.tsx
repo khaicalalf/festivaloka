@@ -21,7 +21,6 @@ export function CreateTenantForm({ onCreated }: Props) {
     setLoading(true);
 
     try {
-      // === HIT API BUAT TENANT ===
       const newTenant = await postTenant({
         name,
         category,
@@ -30,14 +29,12 @@ export function CreateTenantForm({ onCreated }: Props) {
         imageUrl,
       });
 
-      // Backend harus mengembalikan { id: number }
       const newTenantId = newTenant.id;
 
       if (!newTenantId) {
         throw new Error("API tidak mengembalikan ID tenant");
       }
 
-      // === UPDATE SESSION DI LOCAL STORAGE ===
       const stored = localStorage.getItem("admin_auth");
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -46,8 +43,6 @@ export function CreateTenantForm({ onCreated }: Props) {
       }
 
       onCreated();
-
-      // Refresh supaya dashboard baca tenantId baru
       window.location.reload();
     } catch (err: unknown) {
       let message = "Gagal membuat tenant.";
@@ -61,61 +56,63 @@ export function CreateTenantForm({ onCreated }: Props) {
   return (
     <div
       className="
-      bg-white/90 backdrop-blur-md 
-      rounded-2xl shadow-xl 
-      p-6 space-y-5 border border-gray-200
-      max-w-xl mx-auto
+      bg-slate-900 border border-slate-800
+      rounded-3xl shadow-2xl 
+      p-6 space-y-6 max-w-xl mx-auto relative overflow-hidden
     "
     >
-      <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-        Buat Tenant Pertama
-      </h2>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full filter blur-2xl"></div>
 
-      <p className="text-sm text-gray-600 leading-relaxed">
-        Kamu login sebagai <span className="font-semibold">Super Admin</span>.
-        Silakan buat tenant pertama untuk mulai menggunakan dashboard.
-      </p>
+      <div>
+        <h2 className="text-xl font-black text-white tracking-tight">
+          Buat Stan Pertama Anda
+        </h2>
+        <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+          Akun Anda terdaftar sebagai <span className="font-bold text-rose-500">Super Admin</span>.
+          Silakan daftarkan stan kuliner pertama untuk mulai menggunakan fitur dashboard admin.
+        </p>
+      </div>
 
       {error && (
-        <div className="p-3 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-2xl text-xs">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Nama Tenant
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Nama Stan / Tenant
           </label>
           <input
             type="text"
-            className="mt-1 w-full border rounded-lg px-3 py-2 shadow-sm focus:ring focus:ring-cyan-300"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Contoh: Sate Taichan Senayan"
+            placeholder="Contoh: Sate Khas Senayan"
             required
           />
         </div>
 
-        <div>
-          <label className="text-sm font-medium text-gray-700">Kategori</label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kategori Kuliner</label>
           <input
             type="text"
-            className="mt-1 w-full border rounded-lg px-3 py-2 shadow-sm focus:ring focus:ring-cyan-300"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            placeholder="Contoh: Minuman, Sate, Dessert"
+            placeholder="Contoh: FOOD, DRINK"
             required
           />
         </div>
 
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            Alamat Stand
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
+            Kode Stand / Alamat Lokasi
           </label>
           <input
             type="text"
-            className="mt-1 w-full border rounded-lg px-3 py-2 shadow-sm focus:ring focus:ring-cyan-300"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Contoh: A-01"
@@ -123,41 +120,37 @@ export function CreateTenantForm({ onCreated }: Props) {
           />
         </div>
 
-        <div>
-          <label className="text-sm font-medium text-gray-700">Deskripsi</label>
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deskripsi Singkat</label>
           <textarea
-            className="mt-1 w-full border rounded-lg px-3 py-2 shadow-sm resize-none focus:ring focus:ring-cyan-300"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all resize-none"
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ceritakan tenant kamu…"
+            placeholder="Deskripsikan sajian khas kuliner stan Anda..."
             required
           ></textarea>
         </div>
 
-        <div>
-          <label className="text-sm font-medium text-gray-700">
-            URL Gambar (Opsional)
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            URL Foto Stan (Opsional)
           </label>
           <input
             type="url"
-            className="mt-1 w-full border rounded-lg px-3 py-2 shadow-sm focus:ring focus:ring-cyan-300"
+            className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://contoh.com/gambar.jpg"
+            placeholder="https://images.unsplash.com/photo-..."
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`
-            w-full py-3 rounded-lg font-semibold text-white shadow 
-            transition-all duration-200
-            ${loading ? "bg-cyan-300" : "bg-cyan-600 hover:bg-cyan-700"}
-          `}
+          className="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-rose-950/20 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed mt-4"
         >
-          {loading ? "Membuat Tenant…" : "Buat Tenant Baru"}
+          {loading ? "Mendaftarkan Stan..." : "Buat Stan & Mulai Berjualan"}
         </button>
       </form>
     </div>

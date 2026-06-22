@@ -33,6 +33,8 @@ export function useOrderHistory(email: string | null) {
           `https://festivaloka-dev.up.railway.app/api/orders/history?email=${email}`
         );
 
+        if (!res.ok) throw new Error("History fetch response not OK");
+
         const data = (await res.json()) as OrderHistoryItemType[];
 
         // urut dari yang terbaru
@@ -43,10 +45,41 @@ export function useOrderHistory(email: string | null) {
 
         setHistory(sorted);
       } catch (err) {
-        console.error("History fetch error:", err);
+        console.warn("History fetch error, resolving from mock database:", err);
+        // Load mock orders
+        const mockOrdersObj = localStorage.getItem("mock_orders");
+        const mockOrdersList = mockOrdersObj ? Object.values(JSON.parse(mockOrdersObj)) as any[] : [];
+        
+        const matched = mockOrdersList
+          .filter((o) => o.customer?.email?.toLowerCase() === email.toLowerCase())
+          .map((o) => ({
+            id: o.id,
+            totalAmount: o.totalAmount,
+            status: o.status,
+            queueNumber: o.queueNumber || "0",
+            items: o.items,
+            createdAt: new Date(o.customer?.id || Date.now()).toISOString(),
+            pointsEarned: Math.floor(o.totalAmount / 10000),
+            tenant: {
+              name: o.tenant.name,
+              imageUrl: o.tenant.imageUrl,
+              address: o.tenant.address
+            },
+            queue: {
+              status: o.queueStatus || "WAITING"
+            }
+          }));
+
+        const sortedMock = matched.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setHistory(sortedMock);
       } finally {
         setLoading(false);
       }
+
     };
 
     load();

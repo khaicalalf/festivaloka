@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Tenant, MenuItem, CartItem } from "../types";
+import { getAIRecommendation } from "../api/voiceAi";
 
 type Props = {
   tenants: Tenant[];
@@ -8,6 +9,7 @@ type Props = {
   setCheckoutOpen: (open: boolean) => void;
   onVoiceStopped?: () => void;
 };
+
 
 export function useVoiceOrder({
   tenants,
@@ -25,16 +27,7 @@ export function useVoiceOrder({
   const handleVoiceQuery = useCallback(
     async (text: string) => {
       try {
-        const res = await fetch(
-          "https://festivaloka-dev.up.railway.app/api/kolosal-ai/voice-order",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: text }),
-          }
-        );
-
-        const data = await res.json();
+        const data = await getAIRecommendation(text);
         const { tenantId, menuId, quantity } = data;
 
         const tenant = tenants.find((t) => Number(t.id) === Number(tenantId));
@@ -55,6 +48,7 @@ export function useVoiceOrder({
     },
     [tenants, setSelectedTenant, setCart, setCheckoutOpen]
   );
+
 
   /* =============================
       SETUP SPEECH RECOGNITION

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -81,15 +80,12 @@ export default function AdminRegister() {
     try {
       const data = await registerAdmin(payload);
 
-      if (!data) {
-        console.log(data);
-      }
-
       const session: any = {
         id: data.id,
         email: data.email,
         role: data.role,
         tenantId: data.tenantId,
+        access_token: data.access_token,
       };
 
       login(session);
@@ -108,23 +104,35 @@ export default function AdminRegister() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-6 text-center">Admin Register</h1>
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-4 selection:bg-rose-500/30">
+      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        {/* Glow */}
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-violet-500/10 rounded-full filter blur-2xl"></div>
+
+        <div className="text-center mb-8">
+          <Link to="/admin/login" className="inline-flex items-center gap-2 text-rose-500 hover:text-rose-400 font-bold mb-3 transition-all">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Kembali ke Login
+          </Link>
+          <h1 className="text-2xl font-black text-white tracking-tight mt-2">Daftar Admin Baru</h1>
+          <p className="text-xs text-slate-400 mt-1">Buat akun untuk mengelola stan Anda</p>
+        </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
+          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/25 text-rose-400 rounded-2xl text-xs">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label
               htmlFor="email"
-              className="text-sm font-medium text-gray-700"
+              className="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >
-              Email
+              Email Address
             </label>
             <input
               id="email"
@@ -135,15 +143,15 @@ export default function AdminRegister() {
                 if (error) setError("");
               }}
               placeholder="admin@toko.com"
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
               required
               disabled={loading}
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="role" className="text-sm font-medium text-gray-700">
-              Role
+          <div className="space-y-2">
+            <label htmlFor="role" className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Role Jabatan
             </label>
             <select
               id="role"
@@ -156,56 +164,51 @@ export default function AdminRegister() {
                 }
                 if (error) setError("");
               }}
-              className="w-full border rounded px-3 py-2 text-sm bg-white"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-300 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
               disabled={loading}
             >
-              <option value="TENANT_ADMIN">TENANT_ADMIN</option>
-              <option value="karyawan">karyawan</option>
+              <option value="TENANT_ADMIN">TENANT_ADMIN (Super Admin)</option>
+              <option value="karyawan">Karyawan (Staf Toko)</option>
             </select>
-            <p className="text-xs text-gray-500">
-              Role TENANT_ADMIN tidak terkait tenant tertentu.
-            </p>
           </div>
 
           {role === "karyawan" && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label
                 htmlFor="tenant"
-                className="text-sm font-medium text-gray-700"
+                className="text-xs font-bold text-slate-400 uppercase tracking-wider"
               >
-                Tenant
+                Pilih Stan Kerja
               </label>
 
               <select
                 id="tenant"
-                value={tenantId} // Mengambil nilai ID yang sedang terpilih
+                value={tenantId}
                 onChange={(e) => {
-                  setTenantId(e.target.value); // Menyimpan ID yang baru dipilih ke state
+                  setTenantId(e.target.value);
                   if (error) setError("");
                 }}
-                className="w-full border rounded px-3 py-2 text-sm bg-white"
+                className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-350 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
                 disabled={loading || tenantsLoading}
               >
-                <option value="">- Pilih tenant -</option>
-
+                <option value="">- Pilih stan -</option>
                 {tenants.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {/* Nilai (value) yang disimpan adalah ID, tetapi yang ditampilkan adalah Nama */}
                     {t.name}
                   </option>
                 ))}
               </select>
 
               {tenantsLoading && (
-                <p className="text-xs text-gray-500">Memuat daftar tenant...</p>
+                <p className="text-[10px] text-slate-500 animate-pulse">Memuat daftar stan...</p>
               )}
             </div>
           )}
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label
               htmlFor="password"
-              className="text-sm font-medium text-gray-700"
+              className="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >
               Password
             </label>
@@ -218,18 +221,18 @@ export default function AdminRegister() {
                 if (error) setError("");
               }}
               placeholder="••••••••"
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
               required
               disabled={loading}
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <label
               htmlFor="confirm"
-              className="text-sm font-medium text-gray-700"
+              className="text-xs font-bold text-slate-400 uppercase tracking-wider"
             >
-              Konfirmasi Password
+              Ulangi Password
             </label>
             <input
               id="confirm"
@@ -240,7 +243,7 @@ export default function AdminRegister() {
                 if (error) setError("");
               }}
               placeholder="••••••••"
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500/50 rounded-2xl px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
               required
               disabled={loading}
             />
@@ -249,15 +252,15 @@ export default function AdminRegister() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white py-2 rounded disabled:bg-gray-400"
+            className="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-rose-950/20 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed hover:shadow-rose-950/40 mt-4"
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? "Mendaftarkan..." : "Daftar Akun Baru"}
           </button>
         </form>
 
-        <div className="mt-4 text-sm text-gray-600 text-center">
-          Sudah punya akun?{" "}
-          <Link to="/admin/login" className="text-blue-600 hover:underline">
+        <div className="mt-6 text-xs text-slate-400 text-center">
+          Sudah punya akun admin?{" "}
+          <Link to="/admin/login" className="text-rose-400 hover:text-rose-300 font-bold transition">
             Login
           </Link>
         </div>

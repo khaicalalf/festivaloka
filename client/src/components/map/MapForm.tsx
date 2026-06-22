@@ -7,7 +7,7 @@ export default function MapForm() {
         src={mapImg}
         alt="peta lokasi"
         className="w-full h-auto object-contain rounded"
-        draggable={false}
+        draggable={true}
       />
     </div>
   );
